@@ -3,8 +3,7 @@
 use warnings;
 use strict;
 
-use Test::More;
-my $caller = caller(2); plan tests => 'App::pherkin' eq $caller ? 4 : 10;
+use Test::More tests => 10;
 
 use Test::BDD::Cucumber::StepFile;
 use Test::WWW::Mechanize;
