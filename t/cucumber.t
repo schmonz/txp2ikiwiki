@@ -3,7 +3,6 @@
 use warnings;
 use strict;
 
-use FindBin::libs;
 use Test::BDD::Cucumber::Loader;
 use Test::BDD::Cucumber::Harness::TestBuilder;
  
