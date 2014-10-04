@@ -4,34 +4,33 @@ use warnings;
 use strict;
 
 use Test::More tests => 10;
-
 use Test::BDD::Cucumber::StepFile;
+
 use Test::WWW::Mechanize;
-use Method::Signatures;
 
-Given qr/the site's base URL "(.+)"/, func ($c) {
-	$c->stash->{scenario}->{baseurl} = $1;
-	$c->stash->{scenario}->{baseurl} =~ s|/$||;
+Given qr/the site's base URL "(.+)"/, sub {
+	S->{baseurl} = $1;
+	S->{baseurl} =~ s|/$||;
 };
 
-Given qr/a web browser/, func ($c) {
-	$c->stash->{scenario}->{browser} = Test::WWW::Mechanize->new();
+Given qr/a web browser/, sub {
+	S->{browser} = Test::WWW::Mechanize->new();
 };
 
-When qr/I request the typical article "(.+)"/, func ($c) {
-	$c->stash->{scenario}->{browser}->get_ok(
-		$c->stash->{scenario}->{baseurl} . $1
+When qr/I request the typical article "(.+)"/, sub {
+	S->{browser}->get_ok(
+		S->{baseurl} . $1
 	);
 };
 
-Then qr/the posted date is "(.+)"/, func ($c) {
-	$c->stash->{scenario}->{browser}->text_contains($1);
+Then qr/the posted date is "(.+)"/, sub {
+	S->{browser}->text_contains($1);
 };
 
-Then qr/the title ends with "(.+)"/, func ($c) {
-	$c->stash->{scenario}->{browser}->title_like(qr/: $1$/);
+Then qr/the title ends with "(.+)"/, sub {
+	S->{browser}->title_like(qr/: $1$/);
 };
 
-Then qr/the body contains "(.+)"/, func ($c) {
-	$c->stash->{scenario}->{browser}->text_contains($1);
+Then qr/the body contains "(.+)"/, sub {
+	S->{browser}->text_contains($1);
 };
