@@ -3,7 +3,6 @@
 use warnings;
 use strict;
 
-use Test::More tests => 10;
 use Test::BDD::Cucumber::StepFile;
 
 use Test::WWW::Mechanize;
