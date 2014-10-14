@@ -1,0 +1,20 @@
+# txp2ikiwiki
+
+I want to [move my website to
+ikiwiki](http://www.schmonz.com/2013/05/27/remembering-textpattern).
+This will be an automated conversion tool. I will be:
+
+- **Minimally viably happy** if it handles the conversion of my own site
+- **Additionally happy** if it can handle others' sites
+- **Further happy still** if it can be included with ikiwiki
+- **Further happy still** if it can easily be adapted to import
+  other kinds of sites besides Textpattern
+
+## A spec for my site
+
+If my site were just a bunch of pages, I'd know what it does, and
+I'd be able to tell whether the converted site did the same things.
+It's not, so I don't, and I can't. Plus, some of what it does is
+RSS and podcasts.  I'd like to not flood aggregators. So I'm going
+to start by writing automated tests that tell me what my site
+currently does.
