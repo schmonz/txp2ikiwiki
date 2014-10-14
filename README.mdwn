@@ -4,17 +4,64 @@ I want to [move my website to
 ikiwiki](http://www.schmonz.com/2013/05/27/remembering-textpattern).
 This will be an automated conversion tool. I will be:
 
-- **Minimally viably happy** if it handles the conversion of my own site
-- **Additionally happy** if it can handle others' sites
+- **Minimally viably happy** if it handles the conversion of my own
+  site in a way I can trust
+- **Additionally happy** if it can easily handle others' sites
 - **Further happy still** if it can be included with ikiwiki
-- **Further happy still** if it can easily be adapted to import
-  other kinds of sites besides Textpattern
+- **Unaccountably happy** if it can be adapted, without too much
+  effort, to import other kinds of sites besides Textpattern
 
 ## A spec for my site
 
 If my site were just a bunch of pages, I'd know what it does, and
 I'd be able to tell whether the converted site did the same things.
 It's not, so I don't, and I can't. Plus, some of what it does is
-RSS and podcasts.  I'd like to not flood aggregators. So I'm going
-to start by writing automated tests that tell me what my site
-currently does.
+RSS and podcasts, and I'm sure I'd like to not flood aggregators.
+So I'm going to start by figuring out as much as I can about what
+my site currently does.
+
+I'm going to describe each feature in
+[Gherkin](https://github.com/cucumber/cucumber/wiki/Gherkin)-inflected
+English, and I'm going to write the corresponding [step
+definitions](https://github.com/cucumber/cucumber/wiki/Step-Definitions) in
+Perl with the help of
+[Test::BDD::Cucumber](http://search.cpan.org/dist/Test-BDD-Cucumber/). The
+step definitions may need to be implemented differently for Textpattern
+and for ikiwiki; the feature definitions shouldn't need to change
+at all. I bet this'll be a fun way to work.
+
+Properties to be preserved:
+
+- URL structure
+- Content
+- Feeds
+- Appearance
+
+Properties to be gleefully jettisoned:
+
+- Apache
+- MySQL
+- PHP
+
+## A spec for the converter
+
+Properties to be vivified in the tool:
+
+- Assumptions made explicit
+    - Your Textpattern site will be sufficiently like mine (whatever
+      that entails)
+    - You've used ikiwiki before (that's why you want it)
+    - You have ikiwiki installed now
+    - You can handle the instructions in <http://ikiwiki.info/setup/byhand/>
+    - You can run the tool in the same configuration as many times as
+      you want; new site changes only if old site has been changed, OR
+    - You can lock your old site to prevent edits during conversion
+    - You'll flip the switch to the new site when you're comfortable
+- No surprises
+    - Well tested
+- Automatic
+    - Except where it can't possibly avoid surprises
+- Communicative
+    - Shows what has been done (perhaps as passing tests)
+    - Shows what hasn't been done (perhaps as failing tests)
+    - Explains what (if anything) is left to be done manually
