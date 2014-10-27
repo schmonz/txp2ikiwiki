@@ -1,4 +1,4 @@
-Feature: Basic web pages
+Feature: Pages
   As a person interested in what Amitai writes
   I want to browse his website
   In order to maybe learn something

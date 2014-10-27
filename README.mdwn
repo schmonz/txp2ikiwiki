@@ -65,3 +65,38 @@ Properties to be vivified in the tool:
     - Shows what has been done (perhaps as passing tests)
     - Shows what hasn't been done (perhaps as failing tests)
     - Explains what (if anything) is left to be done manually
+
+## Test mechanics
+
+### Can I describe features for more specific personas?
+
+- As a parent
+- As a friend
+- As a professional software developer
+- As a potential consulting client
+
+### Can I get `vim` to help me write for Cucumber?
+
+When Python `behave` and Ruby `cucumber` were installed, `vim`
+showed `>>` in the gutter for some lines. What was that trying to
+help me with? Can I get it to help me with Perl `Test::BDD::Cucumber`?
+
+## Can I rename `step_definitions` to `steps`?
+
+I think I just like it better. To make the change safely, I have to
+compare output from `prove -v` before and after.
+
+## Can I get `prove` to fail when steps are missing?
+
+Right now I have to look carefully through `prove -v`. Should I
+want to be running `pherkin` instead?
+
+## Can I store `steps` elsewhere?
+
+I might prefer them next to `features`. But only if that's common
+in Greater Cucumberland.
+
+## Can I test one feature at a time?
+
+- With `pherkin`, yes
+- With `prove`?
