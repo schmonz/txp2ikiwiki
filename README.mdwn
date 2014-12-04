@@ -1,3 +1,11 @@
+# Hold the phone
+
+Jekyll is popular, manages content in the filesystem much like
+ikiwiki, and apparently has [lots of
+importers](http://import.jekyllrb.com/). If they indeed produce
+high-fidelity output, then maybe I can just postprocess `jekyll-import`'s
+output into ikiwiki input.
+
 # txp2ikiwiki
 
 I want to [move my website to
