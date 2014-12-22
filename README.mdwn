@@ -1,32 +1,61 @@
-# Hold the phone
-
-Jekyll is popular, manages content in the filesystem much like
-ikiwiki, and apparently has [lots of
-importers](http://import.jekyllrb.com/). If they indeed produce
-high-fidelity output, then maybe I can just postprocess `jekyll-import`'s
-output into ikiwiki input.
-
 # txp2ikiwiki
 
-I want to [move my website to
-ikiwiki](http://www.schmonz.com/2013/05/27/remembering-textpattern).
-This will be an automated conversion tool. I will be:
+As the maintainer of my website. I want to [migrate it to
+ikiwiki](http://www.schmonz.com/2013/05/27/remembering-textpattern) in
+a way I can trust, so that I'm more likely to do it.
 
-- **Minimally viably happy** if it handles the conversion of my own
-  site in a way I can trust
-- **Additionally happy** if it can easily handle others' sites
-- **Further happy still** if it can be included with ikiwiki
-- **Unaccountably happy** if it can be adapted, without too much
-  effort, to import other kinds of sites besides Textpattern
+As an ikiwiki committer, I want migrating to ikiwiki to be easy,
+so that others are more likely to do it.
 
-## A spec for my site
+Therefore, I want an automated conversion tool that
+
+- can import Textpattern sites, starting with mine
+- can be included with the ikiwiki distribution
+- can be easily extended to import from other CMSes
+
+## How about `jekyll-import`?
+
+[Jekyll](http://jekyllrb.com) manages static content (much like
+ikiwiki) and has [lots of importers](http://import.jekyllrb.com/).
+If the output of `jekyll-import` were satisfactory, such that we
+could simply postprocess it a bit, then we could gain an import
+path from many CMSes for very little effort, leaving maintenance
+of all those importers to the popular kids. Unfortunately, the
+output isn't satisfactory. For instance, Jekyll has no comment
+feature, so its importers generally make no attempt to preserve
+comments.
+
+## Okay, so `ikiwiki-import`
+
+### Preconditions
+
+- Your website is in Textpattern, configured sufficiently like mine
+- You've used ikiwiki before, and you want it for your site
+- You have ikiwiki installed now
+- You can prevent anyone from changing your old site until you're done
+- You understand the instructions in <http://ikiwiki.info/setup/byhand/>
+- You'll want a chance to manually tweak templates and site config
+- You'll decide when and how to flip the switch for your site
+
+### Must-haves
+
+- No surprises
+- Automatic (except where that might conceal surprises)
+- Communicative
+    - Shows what has been done (perhaps as passing tests)
+    - Shows what hasn't been done (perhaps as failing tests)
+    - Explains what is left to be done manually
+
+-----
+
+# A spec for my website
 
 If my site were just a bunch of pages, I'd know what it does, and
 I'd be able to tell whether the converted site did the same things.
 It's not, so I don't, and I can't. Plus, some of what it does is
 RSS and podcasts, and I'm sure I'd like to not flood aggregators.
 So I'm going to start by figuring out as much as I can about what
-my site currently does.
+my website currently does.
 
 I'm going to describe each feature in
 [Gherkin](https://github.com/cucumber/cucumber/wiki/Gherkin)-inflected
@@ -51,29 +80,6 @@ Properties to be gleefully jettisoned:
 - MySQL
 - PHP
 
-## A spec for the converter
-
-Properties to be vivified in the tool:
-
-- Assumptions made explicit
-    - Your Textpattern site will be sufficiently like mine (whatever
-      that entails)
-    - You've used ikiwiki before (that's why you want it)
-    - You have ikiwiki installed now
-    - You can handle the instructions in <http://ikiwiki.info/setup/byhand/>
-    - You can run the tool in the same configuration as many times as
-      you want; new site changes only if old site has been changed, OR
-    - You can lock your old site to prevent edits during conversion
-    - You'll flip the switch to the new site when you're comfortable
-- No surprises
-    - Well tested
-- Automatic
-    - Except where it can't possibly avoid surprises
-- Communicative
-    - Shows what has been done (perhaps as passing tests)
-    - Shows what hasn't been done (perhaps as failing tests)
-    - Explains what (if anything) is left to be done manually
-
 ## Test mechanics
 
 ### Can I describe features for more specific personas?
@@ -88,6 +94,9 @@ Properties to be vivified in the tool:
 When Python `behave` and Ruby `cucumber` were installed, `vim`
 showed `>>` in the gutter for some lines. What was that trying to
 help me with? Can I get it to help me with Perl `Test::BDD::Cucumber`?
+
+> It's trying to show me where step definitions are missing. Would be
+> nice to teach it about the Cucumber implementation I'm using.
 
 ## Can I rename `step_definitions` to `steps`?
 
