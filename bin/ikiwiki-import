@@ -1,0 +1,323 @@
+#!/usr/bin/perl
+
+use warnings;
+use strict;
+
+use IkiWiki;
+
+
+package IkiWiki::Import;
+
+use Params::Validate qw(:all);
+
+sub serialize_setup {
+	my ($source, $setupfile) = @_;
+
+	my $setup_wikiname = $source->getsetup_wikiname();
+	my $setup_url = $source->getsetup_url();
+
+	my $setup =<<EOT;
+wikiname: $setup_wikiname
+url: $setup_url
+EOT
+	open(my $out, '>', $setupfile) || die "can't open $setupfile: $!";
+	print $out $setup || die "can't write $setupfile: $!";
+	close($out) || die "can't close $setupfile $!";
+}
+
+sub main {
+	my ($sourcename, $srcdir, $setupfile) = validate_pos(@_,
+		{
+			type => SCALAR,
+		},
+		{
+			type => SCALAR,
+			callbacks => { q{mustn't exist} => sub { ! -e shift } },
+		},
+		{
+			type => SCALAR,
+			callbacks => { q{mustn't exist} => sub { ! -e shift } },
+		},
+	);
+
+	my $source = IkiWiki::Import::Source->new($sourcename);
+	for my $post (@{IkiWiki::Import::NormalizedPosts->new($source)}) {
+		IkiWiki::Import::SerializedPost->new(
+			IkiWiki::Import::FormattedPost->new($post),
+			$srcdir,
+		);
+	}
+
+	serialize_setup($source, $setupfile);
+}
+
+
+package IkiWiki::Import::Source;
+
+use Params::Validate qw(:all);
+
+sub new {
+	my ($class, $sourcename) = validate_pos(@_, 1,
+		{ type => SCALAR },
+	);
+	my $self = {
+		source => get_source($sourcename),
+	};
+	bless($self, $class);
+}
+
+sub get_source {
+	my ($sourcename) = @_;
+	my %sources = (
+		textpattern	=> 'IkiWiki::Import::Source::Textpattern',
+	);
+	die "unknown source '$sourcename'" unless defined $sources{$sourcename};
+	return $sources{$sourcename}->new();
+}
+
+sub get_posts {
+	my ($self, @args) = @_;
+	return $self->{source}->get_posts(@args);
+}
+
+sub getsetup_wikiname {
+	my ($self, @args) = @_;
+	return $self->{source}->getsetup_wikiname(@args);
+}
+
+sub getsetup_url {
+	my ($self, @args) = @_;
+	return $self->{source}->getsetup_url(@args);
+}
+
+
+package IkiWiki::Import::Source::Textpattern;
+
+use Params::Validate;
+
+sub new {
+	my ($class) = @_;
+	eval q{
+		use DBI;
+		use DBD::mysql;
+	};
+	if ($@) {
+		die "can't speak MySQL: $@";
+	}
+	my $self = {
+		dbh	=> DBI->connect(
+			'DBI:mysql:'
+				. 'database=schmonz_textpattern;'
+				. 'host=localhost',
+			'schmonz',
+			'',
+			{
+				RaiseError => 1,
+			},
+		),
+	};
+	bless($self, $class);
+}
+
+sub DESTROY {
+	my ($self) = @_;
+	$self->{dbh}->disconnect();
+}
+
+sub getsetup_wikiname {
+	my ($self) = @_;
+	my $wikiname;
+
+	my $sth = $self->{dbh}->prepare(
+		"SELECT val FROM txp_prefs WHERE name='sitename'",
+	);
+	$sth->execute();
+	$wikiname = $sth->fetchrow_arrayref()->[0];
+	$sth->finish();
+
+	return $wikiname;
+}
+
+sub getsetup_url {
+	my ($self) = @_;
+	my $url;
+
+	my $sth = $self->{dbh}->prepare(
+		"SELECT val FROM txp_prefs WHERE name='siteurl'",
+	);
+	$sth->execute();
+	$url = $sth->fetchrow_arrayref()->[0];
+	$sth->finish();
+
+	return $url;
+}
+
+sub _normalize_post {
+	my ($raw_post) = @_;
+	my $normalized_post;
+
+	my %rules = (
+		title		=> $raw_post->{Title},
+		slug		=> $raw_post->{url_title},
+		creation_date	=> $raw_post->{Posted},
+		tags		=> sub {
+			my @tags;
+			for (qw(Category1 Category2)) {
+				push @tags, lc($raw_post->{$_})
+					if defined $raw_post->{$_}
+						&& $raw_post->{$_};
+			}
+			return \@tags;
+		},
+		body		=> sub {
+			my $body = $raw_post->{Body};
+			$body =~ s|\r\n|\n|g;
+			return $body;
+		},
+	);
+
+	for my $key (keys %rules) {
+		my $rule = $rules{$key};
+		if ('CODE' eq ref($rule)) {
+			$normalized_post->{$key} = $rule->();
+		} else {
+			$normalized_post->{$key} = $rule;
+		}
+	}
+
+	return $normalized_post;
+}
+
+sub get_posts {
+	my ($self) = @_;
+	my @normalized_posts;
+
+	my @posts;
+	my $sth = $self->{dbh}->prepare(
+		"SELECT * FROM textpattern ORDER BY Posted DESC",
+	);
+	$sth->execute();
+	while (my $raw_post = $sth->fetchrow_hashref()) {
+		push @posts, _normalize_post($raw_post);
+	}
+	$sth->finish();
+
+	foreach my $post (@posts) {
+		push @normalized_posts, IkiWiki::Import::NormalizedPost->new(
+			$post,
+			undef,
+		);
+	}
+
+	return @normalized_posts;
+}
+
+
+package IkiWiki::Import::NormalizedPosts;
+
+use Params::Validate;
+
+sub new {
+	my ($class, $source) = validate_pos(@_, 1,
+		{ isa => 'IkiWiki::Import::Source' },
+	);
+	my $self = [ get_posts($source) ];
+	bless($self, $class);
+}
+
+sub get_posts {
+	my ($source) = @_;
+	return $source->get_posts();
+}
+
+
+package IkiWiki::Import::NormalizedPost;
+
+use Params::Validate qw(:all);
+
+sub new {
+	my ($class, $post, $comments) = validate_pos(@_, 1,
+		{ type => HASHREF },
+		{ type => UNDEF },
+	);
+	my $self = $post;
+	$post->{comments} = $comments;
+	bless($self, $class);
+}
+
+
+package IkiWiki::Import::FormattedPost;
+
+use Params::Validate;
+
+sub new {
+	my ($class, $normalized_post) = validate_pos(@_, 1,
+		{ isa => 'IkiWiki::Import::NormalizedPost' },
+	);
+	my $self = { ikiformat($normalized_post) };
+	$self->{normalized_post} = $normalized_post;
+	bless($self, $class);
+}
+
+sub ikiformat {
+	my ($normalized_post) = @_;
+	my %ikiformatted;
+
+	my $tags = join(' ', @{$normalized_post->{tags}});
+	my $tagline = $tags ? "[[!tag $tags]]" : "";
+
+	$ikiformatted{post} =<<EOT;
+[[!meta title="$normalized_post->{title}"]]
+[[!meta date="$normalized_post->{creation_date}"]]
+$tagline
+
+$normalized_post->{body}
+EOT
+
+	return %ikiformatted;
+}
+
+sub get_post {
+	my ($self) = @_;
+	return $self->{post};
+}
+
+
+package IkiWiki::Import::SerializedPost;
+
+use Params::Validate qw(:all);
+
+sub new {
+	my ($class, $formatted_post, $srcdir) = validate_pos(@_, 1,
+		{ isa => 'IkiWiki::Import::FormattedPost' },
+		{ type => SCALAR },
+	);
+	my $self = { serialize($formatted_post, $srcdir) };
+	bless($self, $class);
+}
+
+sub serialize {
+	my ($formatted_post, $srcdir) = @_;
+	my %serialized;
+
+	my $post_extension = '.txtl';
+
+	my $basename = $formatted_post->{normalized_post}->{slug};
+
+	$serialized{post} = $basename . $post_extension;
+	IkiWiki::writefile($serialized{post}, $srcdir, $formatted_post->get_post());
+
+	return %serialized;
+}
+
+sub get_post {
+	my ($self) = @_;
+	return $self->{post};
+}
+
+
+package main;
+
+IkiWiki::Import::main(@ARGV) unless caller();
+
+1;
