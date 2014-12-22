@@ -10,12 +10,18 @@ use File::Temp qw(tempdir);
 
 require_ok('bin/ikiwiki-import');
 
+my %local_mysql = (
+	dbname => 'schmonz_textpattern',
+	user => 'schmonz',
+	password => '',
+);
+
 sub normalize_one {
 	my ($sourcename, $nth_most_recent) = @_;
 
 	throws_ok { IkiWiki::Import::Source->new('fnord') } qr|unknown source|;
 
-	my $source = IkiWiki::Import::Source->new($sourcename);
+	my $source = IkiWiki::Import::Source->new($sourcename, %local_mysql);
 	my $normalized_posts = IkiWiki::Import::NormalizedPosts->new($source);
 	my $normalized_post = $normalized_posts->[$nth_most_recent];
 	isa_ok($normalized_post, 'IkiWiki::Import::NormalizedPost');
@@ -108,7 +114,8 @@ sub main_populates_srcdir {
 
 	ok(! -d $srcdir);
 	ok(! -f $setupfile);
-	lives_ok { IkiWiki::Import::main('textpattern', $srcdir, $setupfile) };
+	lives_ok { IkiWiki::Import::main($srcdir, $setupfile, 'textpattern',
+		%local_mysql) };
 	ok(-d $srcdir);
 	ok(-f $setupfile);
 	cmp_ok(get_files_in_dir($srcdir), '>', 2000);

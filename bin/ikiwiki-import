@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/pkg/bin/perl
 
 use warnings;
 use strict;
@@ -7,8 +7,6 @@ use IkiWiki;
 
 
 package IkiWiki::Import;
-
-use Params::Validate qw(:all);
 
 sub serialize_setup {
 	my ($source, $setupfile) = @_;
@@ -26,21 +24,14 @@ EOT
 }
 
 sub main {
-	my ($sourcename, $srcdir, $setupfile) = validate_pos(@_,
-		{
-			type => SCALAR,
-		},
-		{
-			type => SCALAR,
-			callbacks => { q{mustn't exist} => sub { ! -e shift } },
-		},
-		{
-			type => SCALAR,
-			callbacks => { q{mustn't exist} => sub { ! -e shift } },
-		},
-	);
+	my ($srcdir, $setupfile, $sourcename, %params) = @_;
+	die "usage: $0 <srcdir> <setupfile> <sourcename> [sourceparams]\n"
+		unless defined $srcdir
+			&& defined $setupfile && defined $sourcename;
+	die "srcdir mustn't exist" if -e $srcdir;
+	die "setupfile mustn't exist" if -e $setupfile;
 
-	my $source = IkiWiki::Import::Source->new($sourcename);
+	my $source = IkiWiki::Import::Source->new($sourcename, %params);
 	for my $post (@{IkiWiki::Import::NormalizedPosts->new($source)}) {
 		IkiWiki::Import::SerializedPost->new(
 			IkiWiki::Import::FormattedPost->new($post),
@@ -54,25 +45,21 @@ sub main {
 
 package IkiWiki::Import::Source;
 
-use Params::Validate qw(:all);
-
 sub new {
-	my ($class, $sourcename) = validate_pos(@_, 1,
-		{ type => SCALAR },
-	);
+	my ($class, $sourcename, %params) = @_;
 	my $self = {
-		source => get_source($sourcename),
+		source => get_source($sourcename, %params),
 	};
 	bless($self, $class);
 }
 
 sub get_source {
-	my ($sourcename) = @_;
+	my ($sourcename, %params) = @_;
 	my %sources = (
 		textpattern	=> 'IkiWiki::Import::Source::Textpattern',
 	);
 	die "unknown source '$sourcename'" unless defined $sources{$sourcename};
-	return $sources{$sourcename}->new();
+	return $sources{$sourcename}->new(%params);
 }
 
 sub get_posts {
@@ -96,7 +83,13 @@ package IkiWiki::Import::Source::Textpattern;
 use Params::Validate;
 
 sub new {
-	my ($class) = @_;
+	my $class = shift;
+	my (%options) = validate(@_, {
+		dbname		=> 1,
+		host		=> { default => q{localhost} },
+		user		=> 1,
+		password	=> { default => q{} },
+	});
 	eval q{
 		use DBI;
 		use DBD::mysql;
@@ -105,12 +98,12 @@ sub new {
 		die "can't speak MySQL: $@";
 	}
 	my $self = {
+		%options,
 		dbh	=> DBI->connect(
-			'DBI:mysql:'
-				. 'database=schmonz_textpattern;'
-				. 'host=localhost',
-			'schmonz',
-			'',
+			'DBI:mysql:database=' . $options{dbname}
+			. ';host=' . $options{host},
+			$options{user},
+			$options{password},
 			{
 				RaiseError => 1,
 			},
