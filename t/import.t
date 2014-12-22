@@ -26,42 +26,42 @@ sub normalize_one {
 	my $normalized_post = $normalized_posts->[$nth_most_recent];
 	isa_ok($normalized_post, 'IkiWiki::Import::NormalizedPost');
 
-	is(
-		$normalized_post->{title},
-		'When is refactoring a good decision?',
+	my %required_fields = (
+		id			=> '',
+		visible			=> '',
+		title			=> '',
+		author_name		=> '',
+		author_email		=> '',
+		creation_date		=> '',
+		modification_date	=> '',
+		expiration_date		=> '',
+		url_slug		=> '',
+		tags			=> 'ARRAY',
+		text_format		=> '',
+#		text_encoding		=> '',
+		excerpt			=> '',
+		body			=> '',
 	);
-	is(
-		$normalized_post->{slug},
-		'when-is-refactoring-a-good-decision',
-	);
-	is(
-		$normalized_post->{creation_date},
-		'2014-08-07 22:30:48',
-	);
-	is_deeply(
-		$normalized_post->{tags},
-		[qw(technology)],
-	);
-	like(
-		$normalized_post->{body},
-		qr|refactoring is likely a good decision when|,
-	);
-	like(
-		$normalized_post->{body},
-		qr|Gödel, Escher, Bach|,
-	);
-	like(
-		$normalized_post->{body},
-		qr|https://en.wikipedia.org/wiki/Gödel,_Escher,_Bach|,
-	);
-	like(
-		$normalized_post->{body},
-		qr|Øredev|,
-	);
-	unlike(
-		$normalized_post->{body},
-		qr|\r\n|,
-	);
+
+	for my $field (keys %required_fields) {
+		my $value = $normalized_post->{$field};
+		isnt($value, undef, qq{defined $field});
+		my $type = ref($value);
+		my $expected_type = $required_fields{$field};
+		is($type, $expected_type, qq{sensible $field});
+	}
+
+	is($normalized_post->{title}, 'When is refactoring a good decision?');
+	is($normalized_post->{creation_date}, '2014-08-07 22:30:48');
+	is($normalized_post->{url_slug}, 'when-is-refactoring-a-good-decision');
+	is_deeply($normalized_post->{tags}, [qw(technology)]);
+
+	my $body = $normalized_post->{body};
+	like($body, qr|refactoring is likely a good decision when|);
+	like($body, qr|Øredev|);
+	like($body, qr|Gödel, Escher, Bach|);
+	like($body, qr|https://en.wikipedia.org/wiki/Gödel,_Escher,_Bach|);
+	unlike($body, qr|\r\n|);
 
 	return $normalized_post;
 }

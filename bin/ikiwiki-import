@@ -150,9 +150,16 @@ sub _normalize_post {
 	my $normalized_post;
 
 	my %rules = (
+		id		=> $raw_post->{ID},
+		visible		=> (5 == $raw_post->{Status}
+					|| 4 == $raw_post->{Status}),
 		title		=> $raw_post->{Title},
-		slug		=> $raw_post->{url_title},
+		author_name	=> $raw_post->{RealName},
+		author_email	=> $raw_post->{email},
 		creation_date	=> $raw_post->{Posted},
+		modification_date => $raw_post->{LastMod},
+		expiration_date	=> $raw_post->{Expires},
+		url_slug	=> $raw_post->{url_title},
 		tags		=> sub {
 			my @tags;
 			for (qw(Category1 Category2)) {
@@ -160,8 +167,14 @@ sub _normalize_post {
 					if defined $raw_post->{$_}
 						&& $raw_post->{$_};
 			}
+			for (split(',', $raw_post->{Keywords})) {
+				push @tags, lc($_);
+			}
 			return \@tags;
 		},
+		text_format	=> 'txtl',
+		#text_encoding	=> undef,
+		excerpt		=> $raw_post->{Excerpt},
 		body		=> sub {
 			my $body = $raw_post->{Body};
 			$body =~ s|\r\n|\n|g;
@@ -187,7 +200,9 @@ sub get_posts {
 
 	my @posts;
 	my $sth = $self->{dbh}->prepare(
-		"SELECT * FROM textpattern ORDER BY Posted DESC",
+		"SELECT * FROM textpattern"
+		. " LEFT JOIN txp_users ON textpattern.AuthorID=txp_users.name"
+		. " ORDER BY Posted DESC",
 	);
 	$sth->execute();
 	while (my $raw_post = $sth->fetchrow_hashref()) {
@@ -295,7 +310,7 @@ sub serialize {
 
 	my $post_extension = '.txtl';
 
-	my $basename = $formatted_post->{normalized_post}->{slug};
+	my $basename = $formatted_post->{normalized_post}->{url_slug};
 
 	$serialized{post} = $basename . $post_extension;
 	IkiWiki::writefile($serialized{post}, $srcdir, $formatted_post->get_post());
