@@ -131,7 +131,6 @@ sub main_populates_srcdir {
 		%local_mysql) };
 	ok(-d $srcdir);
 	ok(-f $setupfile);
-	cmp_ok(get_files_in_dir($srcdir), '>', 2000);
 	my $setup = slurp_file($setupfile);
 	like($setup, qr|^wikiname: Yareev's schmonz\.com|m);
 	like($setup, qr|^url: www\.schmonz\.com|m);
@@ -185,15 +184,6 @@ sub get_tmpdir_for_test {
 		DIR	=> File::Spec->tmpdir(),
 		CLEANUP	=> 1,
 	);
-}
-
-sub get_files_in_dir {
-	my ($dir) = @_;
-	opendir(my $dh, $dir) || die "can't opendir $dir: $!";
-	my @non_dots = grep { ! /^\./ } readdir($dh);
-	closedir $dh;
-
-	return @non_dots;
 }
 
 sub slurp_file {

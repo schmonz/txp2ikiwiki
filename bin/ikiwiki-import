@@ -305,6 +305,9 @@ package IkiWiki::Import::SerializedPost;
 
 use Params::Validate qw(:all);
 
+use Date::Parse;
+use POSIX qw(strftime);
+
 sub new {
 	my ($class, $formatted_post, $srcdir) = validate_pos(@_, 1,
 		{ isa => 'IkiWiki::Import::FormattedPost' },
@@ -318,11 +321,23 @@ sub serialize {
 	my ($formatted_post, $srcdir) = @_;
 	my %serialized;
 
-	my $post_extension = '.txtl';
+	my $sneaky_normalized = $formatted_post->{normalized_post};
+	my $hardcoded_timezone = undef;
+	my $hardcoded_permalink_format = q{%Y/%m/%d};
 
-	my $basename = $formatted_post->{normalized_post}->{url_slug};
+	my $date_prefix = strftime(
+		$hardcoded_permalink_format,
+		gmtime(
+			str2time(
+				$sneaky_normalized->{creation_date},
+				$hardcoded_timezone,
+			),
+		),
+	);
+	my $basename = $sneaky_normalized->{url_slug};
+	my $post_extension = $sneaky_normalized->{text_format};
 
-	$serialized{post} = $basename . $post_extension;
+	$serialized{post} = "$date_prefix/$basename.$post_extension";
 	IkiWiki::writefile($serialized{post}, $srcdir, $formatted_post->get_post());
 
 	return %serialized;
