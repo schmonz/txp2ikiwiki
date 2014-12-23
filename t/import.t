@@ -23,6 +23,9 @@ sub normalize_one {
 	throws_ok { IkiWiki::Import::Source->new('fnord') } qr|unknown source|;
 
 	my $source = IkiWiki::Import::Source->new($sourcename, %local_mysql);
+	isa_ok($source, 'IkiWiki::Import::Source');
+	isa_ok($source, 'IkiWiki::Import::Source::Textpattern');
+
 	my $normalized_posts = IkiWiki::Import::NormalizedPosts->new($source);
 	my $normalized_post = $normalized_posts->[$nth_most_recent];
 	isa_ok($normalized_post, 'IkiWiki::Import::NormalizedPost');
