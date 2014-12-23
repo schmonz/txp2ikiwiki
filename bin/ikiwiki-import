@@ -67,6 +67,7 @@ sub new {
 		host		=> { default => q{localhost} },
 		user		=> 1,
 		password	=> { default => q{} },
+		mysql_utf8	=> { default => 0 },
 	});
 	eval q{
 		use DBI;
@@ -84,7 +85,7 @@ sub new {
 			$options{password},
 			{
 				RaiseError => 1,
-				# schmonz: mysql_enable_utf8 seems bad for me
+				mysql_enable_utf8 => $options{mysql_utf8},
 			},
 		),
 	};
