@@ -8,21 +8,6 @@ use IkiWiki;
 
 package IkiWiki::Import;
 
-sub serialize_setup {
-	my ($source, $setupfile) = @_;
-
-	my $setup_wikiname = $source->getsetup_wikiname();
-	my $setup_url = $source->getsetup_url();
-
-	my $setup =<<EOT;
-wikiname: $setup_wikiname
-url: $setup_url
-EOT
-	open(my $out, '>', $setupfile) || die "can't open $setupfile: $!";
-	print $out $setup || die "can't write $setupfile: $!";
-	close($out) || die "can't close $setupfile $!";
-}
-
 sub main {
 	my ($srcdir, $setupfile, $sourcename, %params) = @_;
 	die "usage: $0 <srcdir> <setupfile> <sourcename> [sourceparams]\n"
@@ -40,6 +25,21 @@ sub main {
 	}
 
 	serialize_setup($source, $setupfile);
+}
+
+sub serialize_setup {
+	my ($source, $setupfile) = @_;
+
+	my $setup_wikiname = $source->getsetup_wikiname();
+	my $setup_url = $source->getsetup_url();
+
+	my $setup =<<EOT;
+wikiname: $setup_wikiname
+url: $setup_url
+EOT
+	open(my $out, '>', $setupfile) || die "can't open $setupfile: $!";
+	print $out $setup || die "can't write $setupfile: $!";
+	close($out) || die "can't close $setupfile $!";
 }
 
 
