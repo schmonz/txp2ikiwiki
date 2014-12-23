@@ -74,15 +74,27 @@ sub format_one {
 	);
 	isa_ok($formatted_post, 'IkiWiki::Import::FormattedPost');
 
-	my $post_content = $formatted_post->get_post();
-	like($post_content,
-		qr|^\[\[!meta title="When.+decision\?"\]\]$|m);
-	like($post_content,
-		qr|^\[\[!meta date="2014-08-07 22:30:48"\]\]$|m);
-	like($post_content,
-		qr|^\[\[!tag technology\]\]$|m);
-	like($post_content,
-		qr|refactoring is likely a good decision when|m);
+	my @lines = split(/\n/m, $formatted_post->get_post());
+
+	my $commented = sub { qr|^<!-- ikiwiki-import $_[0]: .+ -->$| };
+
+	like(shift @lines, $commented->('id'));
+	like(shift @lines, $commented->('visible'));
+	like(shift @lines, qr|^\[\[!meta title=".+"\]\]$|);
+	like(shift @lines, $commented->('author_name'));
+	like(shift @lines, $commented->('author_email'));
+	like(shift @lines, qr|^\[\[!meta date=".+"\]\]$|);
+	like(shift @lines, $commented->('modification_date'));
+	like(shift @lines, $commented->('expiration_date'));
+	like(shift @lines, $commented->('url_slug'));
+	like(shift @lines, qr|^\[\[!tag |);
+	like(shift @lines, $commented->('text_format'));
+	#like(shift @lines, $commented->('text_encoding'));
+	#like(shift @lines, $commented->('excerpt'));
+	like(shift @lines, qr|^$|);
+
+	my $body = join("\n", @lines);
+	like($body, qr|refactoring is likely a good decision when|m);
 
 	return $formatted_post;
 }
@@ -122,6 +134,24 @@ sub main_populates_srcdir {
 	my $setup = slurp_file($setupfile);
 	like($setup, qr|^wikiname: Yareev's schmonz\.com|m);
 	like($setup, qr|^url: www\.schmonz\.com|m);
+
+	return $srcdir;
+}
+
+sub generate_destdir {
+	my ($srcdir, $destdir) = @_;
+	# XXX really want $setupfile filled in with srcdir and destdir
+	# -plugin comments
+	# -set comments_pagespec='*'
+	my $command = 'ikiwiki';
+	$command .= ' -plugin textile';
+	$command .= ' -plugin tag';
+	$command .= ' -set allow_symlinks_before_srcdir=1';
+	$command .= ' -verbose';
+	$command .= " $srcdir $destdir";
+	diag("about to run $command");
+	ok(! system($command));
+	diag("look in $destdir"); sleep 10;
 }
 
 sub dunno_much_about_history {
@@ -177,6 +207,7 @@ sub slurp_file {
 }
 
 serialize_one(format_one(normalize_one('textpattern', 5)));
-main_populates_srcdir();
+my $srcdir = main_populates_srcdir();
+#generate_destdir($srcdir, get_tmpdir_for_test());
 dunno_much_about_history();
 done_testing();

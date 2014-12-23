@@ -275,9 +275,17 @@ sub ikiformat {
 	my $tagline = $tags ? "[[!tag $tags]]" : "";
 
 	$ikiformatted{post} =<<EOT;
+<!-- ikiwiki-import id: $normalized_post->{id} -->
+<!-- ikiwiki-import visible: $normalized_post->{visible} -->
 [[!meta title="$normalized_post->{title}"]]
+<!-- ikiwiki-import author_name: $normalized_post->{author_name} -->
+<!-- ikiwiki-import author_email: $normalized_post->{author_email} -->
 [[!meta date="$normalized_post->{creation_date}"]]
+<!-- ikiwiki-import modification_date: $normalized_post->{modification_date} -->
+<!-- ikiwiki-import expiration_date: $normalized_post->{expiration_date} -->
+<!-- ikiwiki-import url_slug: $normalized_post->{url_slug} -->
 $tagline
+<!-- ikiwiki-import text_format: $normalized_post->{text_format} -->
 
 $normalized_post->{body}
 EOT
