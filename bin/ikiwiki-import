@@ -47,14 +47,6 @@ package IkiWiki::Import::Source;
 
 sub new {
 	my ($class, $sourcename, %params) = @_;
-	my $self = {
-		source => get_source($sourcename, %params),
-	};
-	bless($self, $class);
-}
-
-sub get_source {
-	my ($sourcename, %params) = @_;
 	my %sources = (
 		textpattern	=> 'IkiWiki::Import::Source::Textpattern',
 	);
@@ -62,23 +54,9 @@ sub get_source {
 	return $sources{$sourcename}->new(%params);
 }
 
-sub get_posts {
-	my ($self, @args) = @_;
-	return $self->{source}->get_posts(@args);
-}
-
-sub getsetup_wikiname {
-	my ($self, @args) = @_;
-	return $self->{source}->getsetup_wikiname(@args);
-}
-
-sub getsetup_url {
-	my ($self, @args) = @_;
-	return $self->{source}->getsetup_url(@args);
-}
-
 
 package IkiWiki::Import::Source::Textpattern;
+use base 'IkiWiki::Import::Source';
 
 use Params::Validate;
 
