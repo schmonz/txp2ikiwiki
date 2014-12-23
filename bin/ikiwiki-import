@@ -98,30 +98,25 @@ sub DESTROY {
 
 sub getsetup_wikiname {
 	my ($self) = @_;
-	my $wikiname;
-
-	my $sth = $self->{dbh}->prepare(
-		"SELECT val FROM txp_prefs WHERE name='sitename'",
-	);
-	$sth->execute();
-	$wikiname = $sth->fetchrow_arrayref()->[0];
-	$sth->finish();
-
-	return $wikiname;
+	return $self->_getsetup_foo('sitename');
 }
 
 sub getsetup_url {
 	my ($self) = @_;
-	my $url;
+	return $self->_getsetup_foo('siteurl');
+}
+
+sub _getsetup_foo {
+	my ($self, $txp_prefs_field) = @_;
 
 	my $sth = $self->{dbh}->prepare(
-		"SELECT val FROM txp_prefs WHERE name='siteurl'",
+		"SELECT val FROM txp_prefs WHERE name=?",
 	);
-	$sth->execute();
-	$url = $sth->fetchrow_arrayref()->[0];
+	$sth->execute($txp_prefs_field);
+	my $value = $sth->fetchrow_arrayref()->[0];
 	$sth->finish();
 
-	return $url;
+	return $value;
 }
 
 sub _normalize_post {
