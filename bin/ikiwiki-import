@@ -279,9 +279,6 @@ package IkiWiki::Import::SerializedPost;
 
 use Params::Validate qw(:all);
 
-use Date::Parse;
-use POSIX qw(strftime);
-
 sub new {
 	my ($class, $formatted_post, $srcdir) = validate_pos(@_, 1,
 		{ isa => 'IkiWiki::Import::FormattedPost' },
@@ -313,6 +310,13 @@ sub serialize {
 sub _get_url_preserving_filename {
 	my ($timezone, $permalink_format, $date, $slug, $format) = @_;
 
+	eval q{
+		use Date::Parse;
+		use POSIX qw(strftime);
+	};
+	if ($@) {
+		die "can't compute correct datetimes: $@";
+	}
 	my $date_prefix = strftime(
 		$permalink_format,
 		gmtime(str2time($date, $timezone)),
