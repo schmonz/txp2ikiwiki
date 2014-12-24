@@ -2,10 +2,15 @@
 
 ## Posts: serialize matching permalinks
 
-- Feed in Textpattern's timezone setting:
-    - `SELECT * FROM txp_prefs WHERE name like '%time%'`
-- Feed in Textpattern's configured permalink format:
-    - `SELECT * FROM txp_prefs WHERE name like '%permalink%'`
+- Respect other permalink settings:
+    - attach_titles_to_permalinks
+    - permalink_title_format
+- Handle the other permalink modes:
+    - messy
+    - id_title
+    - section_id_title
+    - section_title
+    - title_only
 - Write some LWP to check that my new permalinks match my live ones
     - Run it over every 2014 post
     - Repeat, a year at a time, until satisfied
@@ -124,7 +129,6 @@ in the code:
 - "Time zone" -> timezone
 - "Date format" -> timeformat (maybe? where is this used in Txp, in ikiwiki?)
 - "Archive date format" -> timeformat (also?)
-- "Permanent link mode" -> file paths in srcdir
 - "Doctype" -> html5
 - "Accept comments?" -> comments_pagespec
 - "Comments on by default?" -> comments_pagespec

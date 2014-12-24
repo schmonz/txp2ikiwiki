@@ -26,6 +26,9 @@ sub normalize_one {
 	isa_ok($source, 'IkiWiki::Import::Source');
 	isa_ok($source, 'IkiWiki::Import::Source::Textpattern');
 
+	my $config = IkiWiki::Import::Config->new($source);
+	isa_ok($config, 'IkiWiki::Import::Config');
+
 	my $normalized_posts = IkiWiki::Import::NormalizedPosts->new($source);
 	my $normalized_post = $normalized_posts->[$nth_most_recent];
 	isa_ok($normalized_post, 'IkiWiki::Import::NormalizedPost');
@@ -67,11 +70,11 @@ sub normalize_one {
 	like($body, qr|https://en.wikipedia.org/wiki/Gödel,_Escher,_Bach|);
 	unlike($body, qr|\r\n|);
 
-	return $normalized_post;
+	return ($normalized_post, $config);
 }
 
 sub format_one {
-	my ($normalized_post) = @_;
+	my ($normalized_post, $config) = @_;
 
 	my $formatted_post = IkiWiki::Import::FormattedPost->new(
 		$normalized_post,
@@ -100,16 +103,17 @@ sub format_one {
 	my $body = join("\n", @lines);
 	like($body, qr|refactoring is likely a good decision when|m);
 
-	return $formatted_post;
+	return ($formatted_post, $config);
 }
 
 sub serialize_one {
-	my ($formatted_post) = @_;
+	my ($formatted_post, $config) = @_;
 	my $srcdir = get_tmpdir_for_test();
 
 	my $serialized_post = IkiWiki::Import::SerializedPost->new(
 		$formatted_post,
 		$srcdir,
+		$config,
 	);
 	isa_ok($serialized_post, 'IkiWiki::Import::SerializedPost');
 
@@ -118,7 +122,7 @@ sub serialize_one {
 	my $actual_contents = slurp_file("$srcdir/$expected_post");
 	like($actual_contents, qr|refactoring is likely a good decision when|m);
 
-	return $serialized_post;
+	return ($serialized_post, $config);
 }
 
 sub main_populates_srcdir {

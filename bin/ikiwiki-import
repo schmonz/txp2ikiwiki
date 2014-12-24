@@ -17,29 +17,59 @@ sub main {
 	die "setupfile mustn't exist" if -e $setupfile;
 
 	my $source = IkiWiki::Import::Source->new($sourcename, %params);
+	my $config = IkiWiki::Import::Config->new($source);
 	for my $post (@{IkiWiki::Import::NormalizedPosts->new($source)}) {
 		IkiWiki::Import::SerializedPost->new(
 			IkiWiki::Import::FormattedPost->new($post),
 			$srcdir,
+			$config,
 		);
 	}
 
-	serialize_setup($source, $setupfile);
+	serialize_setup($config, $setupfile);
 }
 
 sub serialize_setup {
-	my ($source, $setupfile) = @_;
+	my ($config, $setupfile) = @_;
 
-	my $setup_wikiname = $source->getsetup_wikiname();
-	my $setup_url = $source->getsetup_url();
+	my $setup = q{};
+	for my $k (keys %{$config->{keep}}) {
+		$setup .= "$k: " . $config->{keep}->{$k} . "\n";
+	}
 
-	my $setup =<<EOT;
-wikiname: $setup_wikiname
-url: $setup_url
-EOT
 	open(my $out, '>', $setupfile) || die "can't open $setupfile: $!";
 	print $out $setup || die "can't write $setupfile: $!";
 	close($out) || die "can't close $setupfile $!";
+}
+
+
+package IkiWiki::Import::Config;
+
+use Params::Validate;
+
+sub new {
+	my ($class, $source) = validate_pos(@_, 1,
+		{ isa => 'IkiWiki::Import::Source' },
+	);
+	my $self = { get_config($source) };
+	bless($self, $class);
+}
+
+sub get_config {
+	my ($source) = @_;
+	my %config;
+
+	for my $k (qw(wikiname url timezone)) {
+		my $method = qq{getsetup_$k};
+		$config{keep}->{$k} = $source->$method();
+	}
+
+	for my $k (qw(permalink_format)) {
+		my $method = qq{getsetup_$k};
+		$config{use_and_forget}->{$k} = $source->$method();
+	}
+
+	return %config;
 }
 
 
@@ -105,6 +135,22 @@ sub getsetup_wikiname {
 sub getsetup_url {
 	my ($self) = @_;
 	return $self->_getsetup_foo('siteurl');
+}
+
+sub getsetup_timezone {
+	my ($self) = @_;
+	return $self->_getsetup_foo('timezone_key');
+}
+
+sub getsetup_permalink_format {
+	my ($self) = @_;
+	my %permalink_formats = (
+		year_month_day_title	=> q{%Y/%m/%d},
+	);
+	my $permalink_format = $self->_getsetup_foo('permlink_mode');
+	die "unknown permalink format '$permalink_format'"
+		unless defined $permalink_formats{$permalink_format};
+	return $permalink_formats{$permalink_format};
 }
 
 sub _getsetup_foo {
@@ -280,24 +326,22 @@ package IkiWiki::Import::SerializedPost;
 use Params::Validate qw(:all);
 
 sub new {
-	my ($class, $formatted_post, $srcdir) = validate_pos(@_, 1,
+	my ($class, $formatted_post, $srcdir, $config) = validate_pos(@_, 1,
 		{ isa => 'IkiWiki::Import::FormattedPost' },
 		{ type => SCALAR },
+		{ isa => 'IkiWiki::Import::Config' },
 	);
-	my $self = { serialize($formatted_post, $srcdir) };
+	my $self = { serialize($formatted_post, $srcdir, $config) };
 	bless($self, $class);
 }
 
 sub serialize {
-	my ($formatted_post, $srcdir) = @_;
+	my ($formatted_post, $srcdir, $config) = @_;
 	my %serialized;
 
-	my $hardcoded_timezone = undef;
-	my $hardcoded_permalink_format = q{%Y/%m/%d};
-
 	$serialized{post} = _get_url_preserving_filename(
-		$hardcoded_timezone,
-		$hardcoded_permalink_format,
+		$config->{keep}->{timezone},
+		$config->{use_and_forget}->{permalink_format},
 		$formatted_post->{normalized_post}->{creation_date},
 		$formatted_post->{normalized_post}->{url_slug},
 		$formatted_post->{normalized_post}->{text_format},
