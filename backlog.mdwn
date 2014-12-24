@@ -235,6 +235,7 @@ in the code:
 - Choose and define license
 
 ## Upstream: before pushing
+
 - Get rid of `Params::Validate`
 - Make sure remaining dependencies are not always loaded (only where needed)
 - Run `perlcritic` with ikiwiki's `.perlcriticrc`
