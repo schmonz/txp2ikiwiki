@@ -127,9 +127,8 @@
     $excerpt
     """]]
 
-### Posts: normalize tags
+### Posts: normalize tags (really this time)
 
-- Categories: schema has `Category1` and `Category2`
 - Keywords: intended to hold tags (so `tru_tags` uses it)
     - Stored as comma-separated in MySQL
     - Each tag may contain quotes, spaces, wacky non-ASCII characters
