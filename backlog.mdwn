@@ -224,6 +224,10 @@ in the code:
 - Install man page
 - xref it from elsewhere
 - Write it
+    - Hey users, run against a copy of your source, not the original
+        - In case we mistakenly do anything other than read from it
+        - In case we shouldn't webcrawl-download from your live site
+    - (But I'm going to run it against my live site and it'll be OK)
 
 ## Docs: docwiki
 
