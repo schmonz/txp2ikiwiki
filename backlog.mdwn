@@ -45,7 +45,7 @@
 - guid (a URI, used instead of page URL in RSS/Atom feeds)
 - updated (a fake mod time, to avoid flooding aggregators)
 
-# Posts: normalize tag tags
+## Posts: normalize tag tags
 
 - Categories: schema has `Category1` and `Category2`
 - Keywords: intended to hold tags (so `tru_tags` uses it)
@@ -53,7 +53,7 @@
     - Each tag may contain quotes, spaces, wacky non-ASCII characters
 - When I think I've done it right, get Nathan's test `tru_tags` database
 
-# Posts: some aren't supposed to be visible
+## Posts: some aren't supposed to be visible
 
 - `{ 1 => draft, 2 => hidden, 3 => pending, 4 => live, 5 => sticky }`
 - What should we do with drafts? hidden? pending?
