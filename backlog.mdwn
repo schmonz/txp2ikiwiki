@@ -1,28 +1,15 @@
 # Backlog
 
-## Posts: serialize matching permalinks
+## 1. Import `schmonz.com` correctly
 
-- Respect other permalink settings:
-    - attach_titles_to_permalinks
-    - permalink_title_format
-- Handle the other permalink modes:
-    - messy
-    - id_title
-    - section_id_title
-    - section_title
-    - title_only
+### Posts: serialize matching permalinks
+
 - Write some LWP to check that my new permalinks match my live ones
     - Run it over every 2014 post
     - Repeat, a year at a time, until satisfied
     - (Stash it in the step definitions or something)
 
-## Posts: ikiformat excerpts
-
-    [[!more linktext="Read more..." text="""
-    $excerpt
-    """]]
-
-## Posts: normalize `<txp:foo />` tags
+### Posts: normalize `<txp:foo />` tags
 
 - Bail out for a tag we don't recognize
 - Recognize `<txp:article_image />`
@@ -40,7 +27,7 @@
     - `SELECT * FROM txp_prefs WHERE val='tru_podcast'`
     - `txp_file`
 
-## Posts: normalize and ikiformat meta tags
+### Posts: normalize and ikiformat meta tags
 
 - author
 - keywords
@@ -50,22 +37,22 @@
 - guid (a URI, used instead of page URL in RSS/Atom feeds)
 - updated (a fake mod time, to avoid flooding aggregators)
 
-## Posts: normalize tag tags
+### Posts: normalize tag tags
 
 - Categories: schema has `Category1` and `Category2`
-- Keywords: intended to hold tags (so `tru_tags` uses it)
-    - Stored as comma-separated in MySQL
-    - Each tag may contain quotes, spaces, wacky non-ASCII characters
-- When I think I've done it right, get Nathan's test `tru_tags` database
 
-## Posts: some aren't supposed to be visible
+### Posts: some aren't supposed to be visible
 
 - `{ 1 => draft, 2 => hidden, 3 => pending, 4 => live, 5 => sticky }`
 - What should we do with drafts? hidden? pending?
 - What about posts whose creation_date is in the future?
 - What about posts whose expiration_date is in the past?
 
-## Comments: normalize
+### Sections: decide what to do about them
+
+- my site does have a couple sections
+
+### Comments: normalize
 
 - Metadata
     - ID
@@ -83,7 +70,7 @@
     - body
 - pass into `NormalizedPost->new()`
 
-## Comments: ikiformat-and-serialize
+### Comments: ikiformat-and-serialize
 
 - Render HTML from one becommented post
     - (and maybe one unbecommented post)
@@ -93,7 +80,7 @@
 - Pipe each comment body to `ikiwiki-comment`
 - Good enough? Or try to pass ikiformatted into `ikiwiki-comment`?
 
-## Comments: ikiformat, then serialize
+### Comments: ikiformat, then serialize
 
 - If happy with previous, maybe don't bother with this
 - In `ikiwiki-comment`, extract compute-unique-filename method
@@ -101,13 +88,54 @@
 - Do my own ikiformatting
 - Load the plugin, call the method, `writefile()` into it
 
-## Comments: inspect rendered HTML post
+### Comments: inspect rendered HTML post
 
 - Is post content followed by its comments, oldest to newest?
 - Is each comment's HTML identical to what came out of the database?
 - Does the metadata match up with Textpattern's display?
 
-## Setup: what if someone is going to want `usedirs: 0`?
+### Implementation: see what's still wrong with my imported site
+
+- Use that LWP script to auto-compare destdir and live Textpattern
+- Known problem: Textile is double-encoding HTML entities
+    - `t/textile-double-escape-bug.t`
+- Known (possibly related) problem: I don't understand text encoding
+
+## Implementation: compare `jekyll-import`'s Textpattern importer
+
+- `lib/jekyll-import/importers/textpattern.rb`
+
+-----
+
+## 2. Import more Textpattern variations
+
+### Posts: serialize matching permalinks
+
+- Respect other permalink settings:
+    - attach_titles_to_permalinks
+    - permalink_title_format
+- Handle the other permalink modes:
+    - messy
+    - id_title
+    - section_id_title
+    - section_title
+    - title_only
+
+### Posts: ikiformat excerpts
+
+    [[!more linktext="Read more..." text="""
+    $excerpt
+    """]]
+
+### Posts: normalize tags
+
+- Categories: schema has `Category1` and `Category2`
+- Keywords: intended to hold tags (so `tru_tags` uses it)
+    - Stored as comma-separated in MySQL
+    - Each tag may contain quotes, spaces, wacky non-ASCII characters
+- When I think I've done it right, get Nathan's test `tru_tags` database
+
+### Setup: what if someone is going to want `usedirs: 0`?
 
 We should let them say so, then adjust our output accordingly.
 Instead, we make the implicit assumption that we know the default
@@ -122,7 +150,7 @@ in the code:
     exclude
     wiki_file_chars
 
-## Setup: use all available Textpattern settings
+### Setup: use all available Textpattern settings
 
 - "Site name" -> wikiname
 - "Site slogan" -> site summary or description in feeds
@@ -155,7 +183,7 @@ in the code:
 - "Allow PHP in pages?" -> remember to enable PHP for your ikiwiki destdir
 - "Allow PHP in articles?" -> remember to enable PHP for your ikiwiki destdir
 
-## Setup: `ikiwiki --changesetup` additional reasonable defaults
+### Setup: `ikiwiki --changesetup` additional reasonable defaults
 
     add_plugins:
     - blogspam
@@ -178,22 +206,11 @@ in the code:
     omega_cgi: /path/to/xapian-omega
     tagbase: probably "tag"
 
-## Sections: decide what to do about them
+-----
 
-- my site does have a couple sections
+## 3. Prepare for review
 
-## Implementation: compare `jekyll-import`'s Textpattern importer
-
-- `lib/jekyll-import/importers/textpattern.rb`
-
-## Implementation: see what's still wrong with my imported site
-
-- Use that LWP script to auto-compare destdir and live Textpattern
-- Known problem: Textile is double-encoding HTML entities
-    - `t/textile-double-escape-bug.t`
-- Known (possibly related) problem: I don't understand text encoding
-
-## Design: add Jekyll as a source (3/4-assed)
+### Design: add Jekyll as a source (3/4-assed)
 
 - Goal: fix existing code (_not_ import Jekyll like a champ)
 - In tests:
@@ -207,45 +224,34 @@ in the code:
     - No single input format (instead, multiple formats)
     - No comments (ever)
 
-## Docs: how to add a new source?
-
-- (TDD: read through `t/import.t`, add and/or adjust tests)
-- Add a (human-name, class-name) entry to the list of sources
-- Define your class as a subclass of  `IkiWiki::Import::Source`
-- Try importing and fix errors until you have some output
-- Keep importing and fix implementation until you like the output
-- Share your work
-
-## Docs: what doesn't get imported?
-
-- Revision history (Textpattern doesn't have that)
-- User database (I didn't need that)
-- Templates and styles (that's on you)
-- How many posts were you expecting? How many comments? Did we get them all?
-
-## Docs: `ikiwiki-import(1)`
-
-- Install man page
-- xref it from elsewhere
-- Write it
-    - Hey users, run against a copy of your source, not the original
-        - In case we mistakenly do anything other than read from it
-        - In case we shouldn't webcrawl-download from your live site
-    - (But I'm going to run it against my live site and it'll be OK)
-
-## Docs: docwiki
-
-- <http://ikiwiki.info/convert/>
-
-## Docs: legalisms
-
-- Provide copyright notice
-- Choose and define license
-
-## Upstream: before pushing
+### Implementation: final details
 
 - Get rid of `Params::Validate`
 - Make sure remaining dependencies are not always loaded (only where needed)
 - Run `perlcritic` with ikiwiki's `.perlcriticrc`
 - Add `ikiwiki-import.in` to the build
 - Run `make test`
+- Provide copyright notice
+- Choose and define license
+
+### Docs: `doc/convert.mdwn` and  `doc/ikiwiki-import.mdwn`
+
+- Generate and install man page
+- xref it from elsewhere
+- Write it
+    - Hey users, run against a copy of your source, not the original
+        - In case we mistakenly do anything other than read from it
+        - In case we shouldn't webcrawl-download from your live site
+    - (But I'm going to run it against my live site and it'll be OK)
+- How to add a new source?
+    - (TDD: read through `t/import.t`, add and/or adjust tests)
+    - Add a (human-name, class-name) entry to the list of sources
+    - Define your class as a subclass of  `IkiWiki::Import::Source`
+    - Try importing and fix errors until you have some output
+    - Keep importing and fix implementation until you like the output
+    - Share your code with us
+- What doesn't get imported?
+    - Revision history (Textpattern doesn't have that)
+    - User database (I didn't need that)
+    - Templates and styles (that's on you)
+    - How many posts were you expecting? How many comments? Did we get them all?
