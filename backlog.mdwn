@@ -3,9 +3,9 @@
 ## Posts: serialize matching permalinks
 
 - Feed in Textpattern's timezone setting:
-    - SELECT * FROM txp_prefs WHERE name like '%time%'
+    - `SELECT * FROM txp_prefs WHERE name like '%time%'`
 - Feed in Textpattern's configured permalink format:
-    - SELECT * FROM txp_prefs WHERE name like '%permalink%'
+    - `SELECT * FROM txp_prefs WHERE name like '%permalink%'`
 - Write some LWP to check that my new permalinks match my live ones
     - Run it over every 2014 post
     - Repeat, a year at a time, until satisfied
@@ -28,10 +28,10 @@
     - Document that by default we'll hit the network and the live
       source site to fetch any referenced content stored as files
       outside the database (such as images or podcast enclosures)
-- Recognize <txp:image />
+- Recognize `<txp:image />`
     - Same stuff (look in `txp_image` table)
 - Recognize `tru_podcast` tags:
-    - <txp:tru_podcast_link linktext="important data" />
+    - `<txp:tru_podcast_link linktext="important data" />`
     - `SELECT * FROM txp_prefs WHERE val='tru_podcast'`
     - `txp_file`
 
@@ -47,7 +47,7 @@
 
 # Posts: normalize tag tags
 
-- Categories: schema has Category1 and Category2
+- Categories: schema has `Category1` and `Category2`
 - Keywords: intended to hold tags (so `tru_tags` uses it)
     - Stored as comma-separated in MySQL
     - Each tag may contain quotes, spaces, wacky non-ASCII characters
@@ -76,7 +76,7 @@
     - text encoding
 - Data
     - body
-- pass into NormalizedPost->new()
+- pass into `NormalizedPost->new()`
 
 ## Comments: ikiformat-and-serialize
 
@@ -195,9 +195,9 @@ in the code:
 - In tests:
     - Stop hardcoding values from a specific Textpattern post
     - Stop hardcoding real MySQL crap
-        - Parameterize DBI driver (only tests can, not users)
-        - Prepare representative data as DBD::CSV (or maybe DBD::SQLite)
-        - Uninstall DBD::mysql to make sure it all works right
+        - Parameterize `DBI` driver (only tests can, not users)
+        - Prepare representative data as `DBD::CSV` (or maybe `DBD::SQLite`)
+        - Uninstall `DBD::mysql` to make sure it all works right
 - In data source:
     - No database (instead, files)
     - No single input format (instead, multiple formats)
