@@ -371,9 +371,18 @@ sub new {
 	bless($self, $class);
 }
 
+sub _escape_ikiwiki_directives {
+	my ($author_meant_them_to_be_published) = @_;
+	$author_meant_them_to_be_published =~ s|\[\[!(.+?)\]\]|\\[[!$1]]|g;
+	return $author_meant_them_to_be_published;
+}
+
 sub ikiformat {
 	my ($normalized_post) = @_;
 	my %ikiformatted;
+
+	$normalized_post->{body} =
+		_escape_ikiwiki_directives($normalized_post->{body});
 
 	my $tags = join(' ', @{$normalized_post->{tags}});
 	my $tagline = $tags ? "[[!tag $tags]]" : "";
