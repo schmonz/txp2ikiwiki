@@ -4,10 +4,13 @@ use warnings;
 use strict;
 use utf8;
 
-use Test::More tests => 3;
-use Test::WWW::Mechanize;
+package IkiWiki::Import::Check;
+
+use Test::More;
 
 use Text::Diff;
+
+use IkiWiki;
 
 sub remove_unimportant_differences {
 	my ($html) = @_;
@@ -34,22 +37,16 @@ sub remove_unimportant_differences {
 
 sub get_txp_post_body {
 	my ($relative_permalink) = @_;
-	my $post = 'http://www.schmonz.com/'
-		. $relative_permalink
-		. '';
-	my $mech = Test::WWW::Mechanize->new();
-	$mech->get_ok($post);
-	return remove_unimportant_differences($mech->content());
+	return remove_unimportant_differences(
+		readfile("www.schmonz.com/$relative_permalink/index.html"),
+	);
 }
 
 sub get_iki_post_body {
 	my ($relative_permalink) = @_;
-	my $post = 'file:///Users/schmonz/Documents/trees/txp2ikiwiki/outly/'
-		. $relative_permalink
-		. '/index.html';
-	my $mech = Test::WWW::Mechanize->new();
-	$mech->get_ok($post);
-	return remove_unimportant_differences($mech->content());
+	return remove_unimportant_differences(
+		readfile("outly/$relative_permalink/index.html"),
+	);
 }
 
 sub diff_ok {
@@ -64,3 +61,5 @@ diff_ok(
 	get_iki_post_body($relative_permalink),
 	q{old and new post are sufficiently similar},
 );
+
+done_testing();
