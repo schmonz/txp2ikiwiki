@@ -1,0 +1,4 @@
+#!/bin/sh
+
+_BASENAME=$(basename $1 .html)
+mkdir ${_BASENAME} && mv ${_BASENAME}.html ${_BASENAME}/index.html && echo ${_BASENAME}/index.html

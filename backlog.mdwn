@@ -21,9 +21,17 @@ If this gives you enough confidence, you can stop here. Were it my data, I'd do 
 Assuming the site you're importing is already live at some address...
 
 - Web-crawl a static copy of your live site:
-    - `wget` or `curl` or some such
-    - Or maybe if not all content is reachable that way, map your `srcdir` contents to a list of URLs to fetch, and iterate over the list (preserving the hierarchy locally)
-    - Make sure to download `/perma/link` to `perma/link/index.html` (again because of `usedirs: 1`)
+    - `wget --mirror -p --html-extension http://www.schmonz.com`
+    - `cd www.schmonz.com && find . -type f -name '*\?*'`
+    - `rm index.html\?.html index.html\?pg=*.html
+        category/*/index.html\?pg=*.html
+        ./2003/12/19/planworld-2003-12-19\?.html css.php\?n=*.css
+        atom/index.html\?*=* rss/index.html\?*=*`
+    - `find . -type f -name '*\?*'` (hopefully no results this time)
+    - `find . -type f -name '*.html' -a ! -name index.html -execdir ~/Documents/trees/txp2ikiwiki/bin/usedirify {} \;`
+        - `_BASENAME=$(basename $1 .html)`
+        - `mkdir ${_BASENAME} && mv ${_BASENAME}.html ${_BASENAME}/index.html && echo ${_BASENAME}/index.html`
+    - (Or maybe if not all content is reachable that way, map your `srcdir` contents to a list of URLs to fetch, and iterate over the list (preserving the hierarchy locally))
 - Run `ikiwiki-import-check static destdir`
     - For each page in `static`, is there a corresponding page in `destdir`?
         - Maybe `ikiwiki-import` chose the wrong permalink
