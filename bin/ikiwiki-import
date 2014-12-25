@@ -200,7 +200,17 @@ sub _normalize_post {
 			my $body = $raw_post->{Body};
 			$body =~ s|\r\n|\n|g;
 			utf8::decode($body);
-			return $body;
+			return _expand_txp_tags(
+				$body,
+				article_image => {
+					id => $raw_post->{id},
+					ext => $raw_post->{ext},
+					alt => $raw_post->{alt},
+					caption => $raw_post->{caption},
+					w => $raw_post->{w},
+					h => $raw_post->{h},
+				},
+			);
 		},
 	);
 
@@ -216,6 +226,26 @@ sub _normalize_post {
 	return $normalized_post;
 }
 
+sub _expand_txp_tags {
+	my ($body, %txp_tags) = @_;
+
+	return $body unless defined $txp_tags{article_image}->{id};
+
+	my $hardcoded_ihu = ''; # XXX optional image host url (config.php)
+	my $hardcoded_img_dir = 'images';
+	my $hardcoded_thumbnail = ''; # XXX if thumbnail, 't'
+
+	# this crappy name helps find the matching Textpattern code
+	my $imagesrcurl = $hardcoded_ihu.$hardcoded_img_dir.'/'.$txp_tags{article_image}->{id}.$hardcoded_thumbnail.$txp_tags{article_image}->{ext};
+	my $img_tag = "<img src=\"http://www.schmonz.com/$imagesrcurl\" alt=\"$txp_tags{article_image}->{alt}\" title=\"$txp_tags{article_image}->{caption}\" width=\"$txp_tags{article_image}->{w}\" height=\"$txp_tags{article_image}->{h}\" />";
+	# XXX because wraptag=p, and class=article-image
+	my $p_wrapped = "<p><p class=\"article-image\">$img_tag</p></p>";
+
+	$body =~ s|<txp:article_image .+? />|$p_wrapped|g;
+
+	return $body;
+}
+
 sub get_posts {
 	my ($self) = @_;
 	my @normalized_posts;
@@ -224,6 +254,7 @@ sub get_posts {
 	my $sth = $self->{dbh}->prepare(
 		"SELECT * FROM textpattern"
 		. " LEFT JOIN txp_users ON textpattern.AuthorID=txp_users.name"
+		. " LEFT JOIN txp_image ON textpattern.Image=txp_image.id"
 		. " ORDER BY Posted DESC",
 	);
 	$sth->execute();
