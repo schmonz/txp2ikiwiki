@@ -1,0 +1,66 @@
+#!/usr/pkg/bin/perl
+
+use warnings;
+use strict;
+use utf8;
+
+use Test::More tests => 3;
+use Test::WWW::Mechanize;
+
+use Text::Diff;
+
+sub remove_unimportant_differences {
+	my ($html) = @_;
+
+	# anything before or after the article body
+	$html =~ s|^.+<p>I first learned of|<p>I first learned of|s;
+	$html =~ s|it finally becomes simple.</p>.+$|it finally becomes simple.</p>|s;
+
+	# paragraph-leading whitespace
+	$html =~ s|^(\s)*<p>|<p>|msg;
+
+	# accented characters
+	$html =~ s|é|&eacute;|msg;
+
+	# smart apostrophes
+	$html =~ s|&#8217;|'|msg;
+	$html =~ s|&#39;|'|msg;
+
+	# smart em-dashes
+	$html =~ s|&#8212;|--|msg;
+
+	return $html;
+}
+
+sub get_txp_post_body {
+	my ($relative_permalink) = @_;
+	my $post = 'http://www.schmonz.com/'
+		. $relative_permalink
+		. '';
+	my $mech = Test::WWW::Mechanize->new();
+	$mech->get_ok($post);
+	return remove_unimportant_differences($mech->content());
+}
+
+sub get_iki_post_body {
+	my ($relative_permalink) = @_;
+	my $post = 'file:///Users/schmonz/Documents/trees/txp2ikiwiki/outly/'
+		. $relative_permalink
+		. '/index.html';
+	my $mech = Test::WWW::Mechanize->new();
+	$mech->get_ok($post);
+	return remove_unimportant_differences($mech->content());
+}
+
+sub diff_ok {
+	my ($old, $new, $description) = @_;
+	my $diff = diff \$old, \$new;
+	is($diff, q{}, $description);
+}
+
+my $relative_permalink = '2014/01/28/on-some-cusps';
+diff_ok(
+	get_txp_post_body($relative_permalink),
+	get_iki_post_body($relative_permalink),
+	q{old and new post are sufficiently similar},
+);
