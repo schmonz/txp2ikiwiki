@@ -2,6 +2,43 @@
 
 ## 1. Import `schmonz.com` correctly
 
+### `ikiwiki-import-check`
+
+`ikiwiki-import` claims to perform an accurate and complete import of your data. Are you willing to believe it?
+
+#### Basic sanity-checking
+
+Does `find $srcdir -type f | xargs wc -l` produce the number of posts and comments (combined) that you're expecting?
+
+- Define a `destdir` in the setup file and run `ikiwiki --setup your.setup`
+- Point a webserver at `destdir` so you can browse easily (because `usedirs: 1` means lots of `subdir/index.html`)
+- Point your browser at the webserver and spot-check your newly imported site.
+
+If this gives you enough confidence, you can stop here. Were it my data, I'd do more thorough checking.
+
+#### More thorough checking
+
+Assuming the site you're importing is already live at some address...
+
+- Web-crawl a static copy of your live site:
+    - `wget` or `curl` or some such
+    - Or maybe if not all content is reachable that way, map your `srcdir` contents to a list of URLs to fetch, and iterate over the list (preserving the hierarchy locally)
+    - Make sure to download `/perma/link` to `perma/link/index.html` (again because of `usedirs: 1`)
+- Run `ikiwiki-import-check static destdir`
+    - For each page in `static`, is there a corresponding page in `destdir`?
+        - Maybe `ikiwiki-import` chose the wrong permalink
+    - For each page in `destdir`, is there a corresponding page in `static`?
+        - Maybe `ikiwiki-import` chose the wrong permalink
+        - Maybe the page isn't supposed to be visible and `ikiwiki-import` was going to make it visible
+    - For each pair of corresponding pages, do they compare sufficiently equal?
+        - See the code in `ikiwiki-import-check` that deliberately ignores certain kinds of differences
+        - Are those differences, and only those differences, acceptable to you?
+    - `ikiwiki-import-check` will probably be a set of `Test::More` tests run through `prove(1)`
+        - If any check fails, red
+        - If all the checks pass, green
+
+If this gives you enough confidence, you can stop here. (I did.) If you need to do still more thorough checking, please tell us the details. We may want to incorporate your ideas into `ikiwiki-import-check`.
+
 ### Posts: serialize matching permalinks
 
 - Write some LWP to check that my new permalinks match my live ones
