@@ -465,6 +465,7 @@ sub _get_time {
 
 sub _get_url_preserving_filename {
 	my ($timezone, $permalink_format, $date, $slug, $format) = @_;
+	$timezone = 'UTC'; # XXX why
 
 	eval q{
 		use POSIX qw(strftime);

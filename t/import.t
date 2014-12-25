@@ -118,6 +118,7 @@ sub serialize_one {
 	isa_ok($serialized_post, 'IkiWiki::Import::SerializedPost');
 
 	my $expected_post = $serialized_post->get_post();
+	is($expected_post, '2014/08/07/when-is-refactoring-a-good-decision.txtl');
 	ok(-f "$srcdir/$expected_post", qq{$expected_post exists});
 	my $actual_contents = slurp_file("$srcdir/$expected_post");
 	like($actual_contents, qr|refactoring is likely a good decision when|m);
