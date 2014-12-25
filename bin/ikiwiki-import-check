@@ -12,22 +12,33 @@ use Text::Diff;
 
 use IkiWiki;
 
-sub remove_unimportant_differences {
+sub remove_unimportant_txp_differences {
 	my ($html) = @_;
 
 	# anything before or after the article body
-	$html =~ s|^.+<p>I first learned of|<p>I first learned of|s;
-	$html =~ s|it finally becomes simple.</p>.+$|it finally becomes simple.</p>|s;
+	$html =~ s|^.+?<p>|<p>|s;
+	$html =~ s|<div id="comments">.+$||s;
+	$html =~ s|(.+)</p>.+|$1</p>|s;
 
 	# paragraph-leading whitespace
 	$html =~ s|^(\s)*<p>|<p>|msg;
+
+	# any leading or trailing whitespace
+	$html =~ s|^(\s)*||msg;
+	$html =~ s|(\s)*$||msg;
+
+	# blank lines
+	$html =~ s|^$||msg;
 
 	# accented characters
 	$html =~ s|é|&eacute;|msg;
 
 	# smart apostrophes
 	$html =~ s|&#8217;|'|msg;
-	$html =~ s|&#39;|'|msg;
+
+	# smart double-quotes
+	$html =~ s|&#8220;|"|msg;
+	$html =~ s|&#8221;|"|msg;
 
 	# smart em-dashes
 	$html =~ s|&#8212;|--|msg;
@@ -35,16 +46,42 @@ sub remove_unimportant_differences {
 	return $html;
 }
 
+sub remove_unimportant_iki_differences {
+	my ($html) = @_;
+
+	# anything before or after the article body
+	$html =~ s|^.+<div id="content">\n<p><br />\n</p>\n\n<p><br />\n</p>\n\n<p><br />\n<br />\n</p>\n\n\n\n||s;
+	$html =~ s|</p>\n</div>.+|</p>|s;
+
+	# paragraph-leading whitespace
+	$html =~ s|^(\s)*<p>|<p>|msg;
+
+	# any leading or trailing whitespace
+	$html =~ s|^(\s)*||msg;
+	$html =~ s|(\s)*$||msg;
+
+	# blank lines
+	$html =~ s|^$||msg;
+
+	# weird whitespace around closing span tag
+	$html =~ s| </span>|</span> |msg;
+
+	# smart apostrophes
+	$html =~ s|&#39;|'|msg;
+
+	return $html;
+}
+
 sub get_txp_post_body {
 	my ($relative_permalink) = @_;
-	return remove_unimportant_differences(
+	return remove_unimportant_txp_differences(
 		readfile("www.schmonz.com/$relative_permalink/index.html"),
 	);
 }
 
 sub get_iki_post_body {
 	my ($relative_permalink) = @_;
-	return remove_unimportant_differences(
+	return remove_unimportant_iki_differences(
 		readfile("outly/$relative_permalink/index.html"),
 	);
 }
@@ -55,7 +92,7 @@ sub diff_ok {
 	is($diff, q{}, $description);
 }
 
-my $relative_permalink = '2014/01/28/on-some-cusps';
+my $relative_permalink = '2014/01/26/how-to-efficiently-learn-a-programming-language';
 diff_ok(
 	get_txp_post_body($relative_permalink),
 	get_iki_post_body($relative_permalink),
