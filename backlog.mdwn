@@ -39,12 +39,26 @@ Assuming the site you're importing is already live at some address...
 
 If this gives you enough confidence, you can stop here. (I did.) If you need to do still more thorough checking, please tell us the details. We may want to incorporate your ideas into `ikiwiki-import-check`.
 
-### Posts: serialize matching permalinks
+### Implementation: see what's still wrong with my imported site
 
-- Write some LWP to check that my new permalinks match my live ones
-    - Run it over every 2014 post
-    - Repeat, a year at a time, until satisfied
-    - (Stash it in the step definitions or something)
+- Compare imported posts against live posts using `Test::WWW::Mechanize`
+    - permalinks
+    - titles
+    - body contents
+        - typography
+            - doesn't do much of anything on Textile?
+            - does it work on Markdown?
+            - (I bet there are smart quotes in some posts. stop it?)
+        - images
+        - podcasts
+    - comments
+- Then say it with Gherkin
+
+### Known problems
+
+- Textile is double-encoding HTML entities
+    - `t/textile-double-escape-bug.t`
+- I don't understand text encoding (possibly related)
 
 ### Posts: normalize `<txp:foo />` tags
 
@@ -125,13 +139,6 @@ If this gives you enough confidence, you can stop here. (I did.) If you need to 
 - Is post content followed by its comments, oldest to newest?
 - Is each comment's HTML identical to what came out of the database?
 - Does the metadata match up with Textpattern's display?
-
-### Implementation: see what's still wrong with my imported site
-
-- Use that LWP script to auto-compare destdir and live Textpattern
-- Known problem: Textile is double-encoding HTML entities
-    - `t/textile-double-escape-bug.t`
-- Known (possibly related) problem: I don't understand text encoding
 
 ## Implementation: compare `jekyll-import`'s Textpattern importer
 
