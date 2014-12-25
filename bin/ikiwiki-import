@@ -429,15 +429,35 @@ sub serialize {
 		$formatted_post->{normalized_post}->{text_format},
 	);
 	IkiWiki::writefile($serialized{post}, $srcdir, $formatted_post->get_post());
+	utime(
+		time(),
+		_get_time(
+			$config->{keep}->{timezone},
+			$formatted_post->{normalized_post}->{modification_date},
+		),
+		"$srcdir/$serialized{post}",
+	);
 
 	return %serialized;
+}
+
+sub _get_time {
+	my ($timezone, $date) = @_;
+
+	eval q{
+		use Date::Parse;
+	};
+	if ($@) {
+		die "can't compute correct datetimes: $@";
+	}
+
+	return str2time($date, $timezone);
 }
 
 sub _get_url_preserving_filename {
 	my ($timezone, $permalink_format, $date, $slug, $format) = @_;
 
 	eval q{
-		use Date::Parse;
 		use POSIX qw(strftime);
 	};
 	if ($@) {
@@ -445,7 +465,7 @@ sub _get_url_preserving_filename {
 	}
 	my $date_prefix = strftime(
 		$permalink_format,
-		gmtime(str2time($date, $timezone)),
+		gmtime(_get_time($timezone, $date)),
 	);
 
 	return qq{$date_prefix/$slug.$format};
