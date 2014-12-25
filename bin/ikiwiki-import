@@ -210,6 +210,9 @@ sub _normalize_post {
 					w => $raw_post->{w},
 					h => $raw_post->{h},
 				},
+				image => {
+					id => '18',
+				},
 			);
 		},
 	);
@@ -229,21 +232,47 @@ sub _normalize_post {
 sub _expand_txp_tags {
 	my ($body, %txp_tags) = @_;
 
-	return $body unless defined $txp_tags{article_image}->{id};
+	$body = _expand_txp_article_image($body, delete $txp_tags{article_image});
+	$body = _expand_txp_image($body, delete $txp_tags{image});
+
+	my $leftover_keys = join(', ', keys %txp_tags);
+	die "unknown <txp:foo>: $leftover_keys" if $leftover_keys;
+
+	return $body;
+}
+
+sub _expand_txp_article_image {
+	my ($body, $article_image) = @_;
+
+	return $body unless defined $article_image->{id};
 
 	my $hardcoded_ihu = ''; # XXX optional image host url (config.php)
 	my $hardcoded_img_dir = 'images';
 	my $hardcoded_thumbnail = ''; # XXX if thumbnail, 't'
 
 	# this crappy name helps find the matching Textpattern code
-	my $imagesrcurl = $hardcoded_ihu.$hardcoded_img_dir.'/'.$txp_tags{article_image}->{id}.$hardcoded_thumbnail.$txp_tags{article_image}->{ext};
-	my $img_tag = "<img src=\"http://www.schmonz.com/$imagesrcurl\" alt=\"$txp_tags{article_image}->{alt}\" title=\"$txp_tags{article_image}->{caption}\" width=\"$txp_tags{article_image}->{w}\" height=\"$txp_tags{article_image}->{h}\" />";
+	my $imagesrcurl = $hardcoded_ihu.$hardcoded_img_dir.'/'.$article_image->{id}.$hardcoded_thumbnail.$article_image->{ext};
+	my $img_tag = "<img src=\"http://www.schmonz.com/$imagesrcurl\" alt=\"$article_image->{alt}\" title=\"$article_image->{caption}\" width=\"$article_image->{w}\" height=\"$article_image->{h}\" />";
 	# XXX because wraptag=p, and class=article-image
 	my $p_wrapped = "<p><p class=\"article-image\">$img_tag</p></p>";
 
 	$body =~ s|<txp:article_image .+? />|$p_wrapped|g;
 
 	return $body;
+}
+
+sub _expand_txp_image {
+	my ($body, $image) = @_;
+
+	return $body unless defined $image->{id};
+
+	# my site has exactly one reference to one non-article image:
+	$body =~ s|<txp:image id="$image->{id}" />|<img src="http://www.schmonz.com/images/$image->{id}.gif" alt="[signed] Michael D. Rosenzweig" width="224" height="39" />|g;
+	return $body;
+
+	# more generally, each post body could have any number of references
+	# each of those is a database lookup (modulo memoization)
+	# do this after posts are otherwise normalized (careful of $dbh)
 }
 
 sub get_posts {

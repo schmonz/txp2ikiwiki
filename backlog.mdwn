@@ -13,14 +13,15 @@
 
 - Bail out for a tag we don't recognize
 - Recognize `<txp:article_image />`
+    - There's either 1 article image, or 0
     - Compute the URL where it lives and the corresponding local path
     - Fetch it from live site to local path
-    - Replace the tag with whatever exactly it does
     - Optionally don't do the fetching
     - Document that by default we'll hit the network and the live
       source site to fetch any referenced content stored as files
       outside the database (such as images or podcast enclosures)
 - Recognize `<txp:image />`
+    - There can be N different ones mentioned in an article
     - Same stuff (look in `txp_image` table)
 - Recognize `tru_podcast` tags:
     - `<txp:tru_podcast_link linktext="important data" />`
