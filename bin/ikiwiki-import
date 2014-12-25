@@ -203,15 +203,19 @@ sub _normalize_post {
 			return _expand_txp_tags(
 				$body,
 				article_image => {
-					id => $raw_post->{id},
-					ext => $raw_post->{ext},
-					alt => $raw_post->{alt},
-					caption => $raw_post->{caption},
-					w => $raw_post->{w},
-					h => $raw_post->{h},
+					id => $raw_post->{'txp_image.id'},
+					ext => $raw_post->{'txp_image.ext'},
+					alt => $raw_post->{'txp_image.alt'},
+					caption => $raw_post->{'txp_image.caption'},
+					w => $raw_post->{'txp_image.w'},
+					h => $raw_post->{'txp_image.h'},
 				},
 				image => {
 					id => '18',
+				},
+				tru_podcast => {
+					id => $raw_post->{custom_1},
+					filename => $raw_post->{filename},
 				},
 			);
 		},
@@ -234,6 +238,7 @@ sub _expand_txp_tags {
 
 	$body = _expand_txp_article_image($body, delete $txp_tags{article_image});
 	$body = _expand_txp_image($body, delete $txp_tags{image});
+	$body = _expand_txp_tru_podcast($body, delete $txp_tags{tru_podcast});
 
 	my $leftover_keys = join(', ', keys %txp_tags);
 	die "unknown <txp:foo>: $leftover_keys" if $leftover_keys;
@@ -275,6 +280,22 @@ sub _expand_txp_image {
 	# do this after posts are otherwise normalized (careful of $dbh)
 }
 
+sub _expand_txp_tru_podcast {
+	my ($body, $tru_podcast) = @_;
+
+	return $body unless defined $tru_podcast->{id}
+		&& defined $tru_podcast->{filename};
+
+	my $download_link = "http://www.schmonz.com/file_download/$tru_podcast->{id}/$tru_podcast->{filename}";
+
+	$body =~ s|<txp:tru_podcast_link linktext="(.+?)" />|<a href="$download_link">$1</a>|g;
+
+	return $body;
+
+	# find which custom field has the value "tru_podcast"
+	# that's the field whose value needs to be passed in here
+}
+
 sub get_posts {
 	my ($self) = @_;
 	my @normalized_posts;
@@ -284,6 +305,7 @@ sub get_posts {
 		"SELECT * FROM textpattern"
 		. " LEFT JOIN txp_users ON textpattern.AuthorID=txp_users.name"
 		. " LEFT JOIN txp_image ON textpattern.Image=txp_image.id"
+		. " LEFT JOIN txp_file ON textpattern.custom_1=txp_file.id"
 		. " ORDER BY Posted DESC",
 	);
 	$sth->execute();

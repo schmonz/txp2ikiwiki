@@ -11,9 +11,7 @@
 
 ### Posts: normalize `<txp:foo />` tags
 
-- Bail out for a tag we don't recognize
 - Recognize `<txp:article_image />`
-    - There's either 1 article image, or 0
     - Compute the URL where it lives and the corresponding local path
     - Fetch it from live site to local path
     - Optionally don't do the fetching
@@ -23,10 +21,6 @@
 - Recognize `<txp:image />`
     - There can be N different ones mentioned in an article
     - Same stuff (look in `txp_image` table)
-- Recognize `tru_podcast` tags:
-    - `<txp:tru_podcast_link linktext="important data" />`
-    - `SELECT * FROM txp_prefs WHERE val='tru_podcast'`
-    - `txp_file`
 
 ### Posts: normalize and ikiformat meta tags
 
