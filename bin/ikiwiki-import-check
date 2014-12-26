@@ -37,6 +37,7 @@ sub remove_unimportant_txp_differences {
 
 	# accented characters
 	$html =~ s|á|&aacute;|msg;
+	$html =~ s|à|&agrave;|msg;
 	$html =~ s|é|&eacute;|msg;
 	$html =~ s|ç|&ccedil;|msg;
 	$html =~ s|Ø|&Oslash;|msg;
@@ -45,6 +46,7 @@ sub remove_unimportant_txp_differences {
 	# smart apostrophes
 	$html =~ s|&#8217;|'|msg;
 	$html =~ s|&#039;|'|msg;
+	$html =~ s|&#39;|'|msg;
 	$html =~ s|’|'|msg;
 
 	# smart double-quotes
@@ -60,6 +62,8 @@ sub remove_unimportant_txp_differences {
 	# URL-escapes
 	$html =~ s|%2B|+|msg;
 	$html =~ s|%2C|,|msg;
+	$html =~ s|%28|(|msg;
+	$html =~ s|%29|)|msg;
 	$html =~ s|%C3%B6|&amp;ouml;|msg;
 
 	# don't care about caps that much
@@ -108,16 +112,16 @@ sub remove_unimportant_iki_differences {
 
 sub get_txp_post_body {
 	my ($relative_permalink) = @_;
-	return remove_unimportant_txp_differences(
-		readfile("www.schmonz.com/$relative_permalink/index.html"),
-	);
+	my $file = "www.schmonz.com/$relative_permalink/index.html";
+	return "MISSING FILE: $file" unless -f $file;
+	return remove_unimportant_txp_differences(readfile($file));
 }
 
 sub get_iki_post_body {
 	my ($relative_permalink) = @_;
-	return remove_unimportant_iki_differences(
-		readfile("outly/$relative_permalink/index.html"),
-	);
+	my $file = "outly/$relative_permalink/index.html";
+	return "MISSING FILE: $file" unless -f $file;
+	return remove_unimportant_iki_differences(readfile($file));
 }
 
 sub _colorize_diff {
