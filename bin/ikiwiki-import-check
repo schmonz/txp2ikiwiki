@@ -9,6 +9,7 @@ package IkiWiki::Import::Check;
 use Test::More;
 
 use Text::Diff;
+use IPC::Open2;
 
 use IkiWiki;
 
@@ -27,14 +28,24 @@ sub remove_unimportant_txp_differences {
 	$html =~ s|^(\s)*||msg;
 	$html =~ s|(\s)*$||msg;
 
+	# blockquotes
+	$html =~ s|<blockquote>\n<p>|<blockquote><p>|msg;
+	$html =~ s|</p>\n</blockquote>|</p></blockquote>|msg;
+
 	# blank lines
 	$html =~ s|^$||msg;
 
 	# accented characters
+	$html =~ s|á|&aacute;|msg;
 	$html =~ s|é|&eacute;|msg;
+	$html =~ s|ç|&ccedil;|msg;
+	$html =~ s|Ø|&Oslash;|msg;
+	$html =~ s|ö|&ouml;|msg;
 
 	# smart apostrophes
 	$html =~ s|&#8217;|'|msg;
+	$html =~ s|&#039;|'|msg;
+	$html =~ s|’|'|msg;
 
 	# smart double-quotes
 	$html =~ s|&#8220;|"|msg;
@@ -43,7 +54,21 @@ sub remove_unimportant_txp_differences {
 	# smart em-dashes
 	$html =~ s|&#8212;|--|msg;
 
-	return $html;
+	# smart ellipses
+	$html =~ s|&#8230;|...|msg;
+
+	# URL-escapes
+	$html =~ s|%2B|+|msg;
+	$html =~ s|%2C|,|msg;
+	$html =~ s|%C3%B6|&amp;ouml;|msg;
+
+	# don't care about caps that much
+	$html =~ s|<span class="caps">(.+?)</span>|$1|msg;
+
+	# one particular weird image tag
+	$html =~ s|images/28\.jpg" alt=".+width="472"|images/28.jpg" alt="XXX fixed quotes in live site, try again later" width="472"|msg;
+
+	return $html . "\n";
 }
 
 sub remove_unimportant_iki_differences {
@@ -63,13 +88,22 @@ sub remove_unimportant_iki_differences {
 	# blank lines
 	$html =~ s|^$||msg;
 
-	# weird whitespace around closing span tag
+	# weirdness around span tags
 	$html =~ s| </span>|</span> |msg;
+	$html =~ s|,</span>|</span>,|msg;
+	$html =~ s|\.</span>|</span>.|msg;
+
+	# don't care about caps that much
+	$html =~ s|<span class="caps">(.+?)</span>|$1|msg;
+
+	# one particular weird image tag
+	$html =~ s|images/28\.jpg" alt=".+width="472"|images/28.jpg" alt="XXX fixed quotes in live site, try again later" width="472"|msg;
 
 	# smart apostrophes
 	$html =~ s|&#39;|'|msg;
+	$html =~ s|&rsquo;|'|msg;
 
-	return $html;
+	return $html . "\n";
 }
 
 sub get_txp_post_body {
@@ -86,17 +120,45 @@ sub get_iki_post_body {
 	);
 }
 
+sub _colorize_diff {
+	my ($diff) = @_;
+
+	my $pid = eval { open2(*IN, *OUT, "colordiff") };
+	return $diff if ($@);
+
+	binmode(IN, ':utf8');
+	binmode(OUT, ':utf8');
+	print OUT $diff;
+	close OUT;
+	local $/ = undef;
+	my $colordiff = <IN>;
+	close IN;
+	waitpid $pid, 0;
+
+	return $colordiff;
+}
+
 sub diff_ok {
 	my ($old, $new, $description) = @_;
 	my $diff = diff \$old, \$new;
-	is($diff, q{}, $description);
+	if (q{} eq $diff) {
+		pass($description);
+	} else {
+		fail($description);
+		diag(_colorize_diff($diff));
+	}
 }
 
-my $relative_permalink = '2014/01/26/how-to-efficiently-learn-a-programming-language';
-diff_ok(
-	get_txp_post_body($relative_permalink),
-	get_iki_post_body($relative_permalink),
-	q{old and new post are sufficiently similar},
-);
+sub main {
+	my @permalinks = @_;
+	for my $permalink (@permalinks) {
+		diff_ok(
+			get_txp_post_body($permalink),
+			get_iki_post_body($permalink),
+			qq{old and new $permalink are similar enough},
+		);
+	}
+}
 
+main(@ARGV);
 done_testing();
