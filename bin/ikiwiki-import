@@ -2,6 +2,7 @@
 
 use warnings;
 use strict;
+use utf8;
 
 use IkiWiki;
 
@@ -203,12 +204,12 @@ sub _normalize_post {
 			return _expand_txp_tags(
 				$body,
 				article_image => {
-					id => $raw_post->{'txp_image.id'},
-					ext => $raw_post->{'txp_image.ext'},
-					alt => $raw_post->{'txp_image.alt'},
-					caption => $raw_post->{'txp_image.caption'},
-					w => $raw_post->{'txp_image.w'},
-					h => $raw_post->{'txp_image.h'},
+					id => $raw_post->{'Image'},
+					ext => $raw_post->{'ext'},
+					alt => $raw_post->{'alt'},
+					caption => $raw_post->{'caption'},
+					w => $raw_post->{'w'},
+					h => $raw_post->{'h'},
 				},
 				image => {
 					id => '18',
@@ -249,7 +250,9 @@ sub _expand_txp_tags {
 sub _expand_txp_article_image {
 	my ($body, $article_image) = @_;
 
-	return $body unless defined $article_image->{id};
+	foreach my $key (qw(id ext alt caption w h)) {
+		return $body unless defined $article_image->{$key};
+	}
 
 	my $hardcoded_ihu = ''; # XXX optional image host url (config.php)
 	my $hardcoded_img_dir = 'images';
@@ -288,7 +291,7 @@ sub _expand_txp_tru_podcast {
 
 	my $download_link = "http://www.schmonz.com/file_download/$tru_podcast->{id}/$tru_podcast->{filename}";
 
-	$body =~ s|<txp:tru_podcast_link linktext="(.+?)" />|<a href="$download_link">$1</a>|g;
+	$body =~ s|<txp:tru_podcast_link linktext="(.+?)" />|<a href="$download_link" rel="enclosure">$1</a>|g;
 
 	return $body;
 
