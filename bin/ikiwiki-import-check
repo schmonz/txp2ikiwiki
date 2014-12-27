@@ -13,6 +13,13 @@ use IPC::Open2;
 
 use IkiWiki;
 
+sub tidy {
+	my ($content) = @_;
+	IkiWiki::loadplugin('htmltidy');
+	IkiWiki::Plugin::htmltidy::checkconfig();
+	return IkiWiki::Plugin::htmltidy::sanitize(content => $content);
+}
+
 sub remove_unimportant_txp_differences {
 	my ($html) = @_;
 
@@ -28,36 +35,42 @@ sub remove_unimportant_txp_differences {
 	$html =~ s|^(\s)*||msg;
 	$html =~ s|(\s)*$||msg;
 
-	# blockquotes
-	$html =~ s|<blockquote>\n<p>|<blockquote><p>|msg;
-	$html =~ s|</p>\n</blockquote>|</p></blockquote>|msg;
-
 	# blank lines
 	$html =~ s|^$||msg;
 
 	# accented characters
-	$html =~ s|á|&aacute;|msg;
-	$html =~ s|à|&agrave;|msg;
-	$html =~ s|é|&eacute;|msg;
-	$html =~ s|ç|&ccedil;|msg;
-	$html =~ s|Ø|&Oslash;|msg;
-	$html =~ s|ö|&ouml;|msg;
+	#$html =~ s|á|&aacute;|msg;
+	#$html =~ s|à|&agrave;|msg;
+	#$html =~ s|é|&eacute;|msg;
+	#$html =~ s|ç|&ccedil;|msg;
+	#$html =~ s|Ø|&Oslash;|msg;
+	#$html =~ s|ö|&ouml;|msg;
+	#$html =~ s|ý|&yacute;|msg;
 
 	# smart apostrophes
+	$html =~ s|&#8216;|'|msg;
 	$html =~ s|&#8217;|'|msg;
 	$html =~ s|&#039;|'|msg;
 	$html =~ s|&#39;|'|msg;
+	$html =~ s|&#39;|&amp;|msg;
 	$html =~ s|’|'|msg;
 
 	# smart double-quotes
 	$html =~ s|&#8220;|"|msg;
 	$html =~ s|&#8221;|"|msg;
+	$html =~ s|“|"|msg;
+	$html =~ s|”|"|msg;
 
 	# smart em-dashes
 	$html =~ s|&#8212;|--|msg;
+	$html =~ s|—|--|msg;
 
 	# smart ellipses
 	$html =~ s|&#8230;|...|msg;
+	$html =~ s|…|...|msg;
+
+	# other entities
+	$html =~ s|&#62;|&gt;|msg;
 
 	# URL-escapes
 	$html =~ s|%2B|+|msg;
@@ -67,7 +80,7 @@ sub remove_unimportant_txp_differences {
 	$html =~ s|%C3%B6|&amp;ouml;|msg;
 
 	# don't care about caps that much
-	$html =~ s|<span class="caps">(.+?)</span>|$1|msg;
+	$html =~ s|<span class=.?"caps">(.+?)</span>|$1|msg;
 
 	# one particular weird image tag
 	$html =~ s|images/28\.jpg" alt=".+width="472"|images/28.jpg" alt="XXX fixed quotes in live site, try again later" width="472"|msg;
@@ -79,7 +92,7 @@ sub remove_unimportant_iki_differences {
 	my ($html) = @_;
 
 	# anything before or after the article body
-	$html =~ s|^.+<div id="content">\n<p><br />\n</p>\n\n<p><br />\n</p>\n\n<p><br />\n<br />\n</p>\n\n\n\n||s;
+	$html =~ s|^.+<div id="content">\n<p><br /></p>\n<p><br /></p>\n<p><br />\n<br /></p>\n||s;
 	$html =~ s|</p>\n</div>.+|</p>|s;
 
 	# paragraph-leading whitespace
@@ -98,7 +111,7 @@ sub remove_unimportant_iki_differences {
 	$html =~ s|\.</span>|</span>.|msg;
 
 	# don't care about caps that much
-	$html =~ s|<span class="caps">(.+?)</span>|$1|msg;
+	$html =~ s|<span class=.?"caps">(.+?)</span>|$1|msg;
 
 	# one particular weird image tag
 	$html =~ s|images/28\.jpg" alt=".+width="472"|images/28.jpg" alt="XXX fixed quotes in live site, try again later" width="472"|msg;
@@ -106,6 +119,7 @@ sub remove_unimportant_iki_differences {
 	# smart apostrophes
 	$html =~ s|&#39;|'|msg;
 	$html =~ s|&rsquo;|'|msg;
+	$html =~ s|’|'|msg;
 
 	return $html . "\n";
 }
@@ -113,15 +127,15 @@ sub remove_unimportant_iki_differences {
 sub get_txp_post_body {
 	my ($relative_permalink) = @_;
 	my $file = "www.schmonz.com/$relative_permalink/index.html";
-	return "MISSING FILE: $file" unless -f $file;
-	return remove_unimportant_txp_differences(readfile($file));
+	return "MISSING FILE: $file\n" unless -f $file;
+	return remove_unimportant_txp_differences(tidy(readfile($file)));
 }
 
 sub get_iki_post_body {
 	my ($relative_permalink) = @_;
 	my $file = "outly/$relative_permalink/index.html";
-	return "MISSING FILE: $file" unless -f $file;
-	return remove_unimportant_iki_differences(readfile($file));
+	return "MISSING FILE: $file\n" unless -f $file;
+	return remove_unimportant_iki_differences(tidy(readfile($file)));
 }
 
 sub _colorize_diff {

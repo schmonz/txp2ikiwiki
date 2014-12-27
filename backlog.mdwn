@@ -4,6 +4,18 @@
 
 ### `ikiwiki-import-check`
 
+using the same parser, parse the before and the after
+
+if the parser is very detailed, filter unimportant differences out
+afterward, or perhaps during the parsing
+
+compare the data structures. where they differ, is the difference
+important? if so, generate srcdir more correctly and compare again.
+if not, filter out the difference and compare again.
+
+eventually it should be reasonable for all the before-and-after
+pairs to parse to data structures that deep-compare equal.
+
 `ikiwiki-import` claims to perform an accurate and complete import
 of your data. Are you willing to believe it?
 
@@ -313,4 +325,8 @@ in the code:
     - Revision history (Textpattern doesn't have that)
     - User database (I didn't need that)
     - Templates and styles (that's on you)
+    - Organization of content (that's on you)
+        - Lists of articles
+        - Archive pages
+        - RSS/Atom feeds
     - How many posts were you expecting? How many comments? Did we get them all?
