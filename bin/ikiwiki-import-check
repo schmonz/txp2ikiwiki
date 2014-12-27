@@ -124,20 +124,6 @@ sub remove_unimportant_iki_differences {
 	return $html . "\n";
 }
 
-sub get_txp_post_body {
-	my ($relative_permalink) = @_;
-	my $file = "www.schmonz.com/$relative_permalink/index.html";
-	return "MISSING FILE: $file\n" unless -f $file;
-	return remove_unimportant_txp_differences(tidy(readfile($file)));
-}
-
-sub get_iki_post_body {
-	my ($relative_permalink) = @_;
-	my $file = "outly/$relative_permalink/index.html";
-	return "MISSING FILE: $file\n" unless -f $file;
-	return remove_unimportant_iki_differences(tidy(readfile($file)));
-}
-
 sub _colorize_diff {
 	my ($diff) = @_;
 
@@ -156,6 +142,38 @@ sub _colorize_diff {
 	return $colordiff;
 }
 
+sub get_old_filename {
+	my ($permalink) = @_;
+	return _get_filename('www.schmonz.com', $permalink);
+}
+
+sub get_new_filename {
+	my ($permalink) = @_;
+	return _get_filename('outly', $permalink);
+}
+
+sub _get_filename {
+	my ($prefix, $permalink) = @_;
+	my $filename = "$prefix/$permalink/index.html";
+	return $filename;
+}
+
+sub exists_in_both_old_and_new {
+	my ($permalink) = @_;
+	my $old = get_old_filename($permalink);
+	my $new = get_new_filename($permalink);
+	#diag("gonna check old ($old) and new ($new)");
+	if (-f $old && -f $new) {
+		pass("old and new $permalink exist");
+	} elsif (-f $old && ! -f $new) {
+		fail("MISSING NEW $permalink");
+	} elsif (! -f $old && -f $new) {
+		fail("MISSING OLD $permalink");
+	} else {
+		fail("MISSING OLD AND NEW $permalink");
+	}
+}
+
 sub diff_ok {
 	my ($old, $new, $description) = @_;
 	my $diff = diff \$old, \$new;
@@ -170,11 +188,14 @@ sub diff_ok {
 sub main {
 	my @permalinks = @_;
 	for my $permalink (@permalinks) {
-		diff_ok(
-			get_txp_post_body($permalink),
-			get_iki_post_body($permalink),
-			qq{old and new $permalink are similar enough},
-		);
+
+		exists_in_both_old_and_new($permalink);
+
+#		diff_ok(
+#			remove_unimportant_txp_differences(tidy(readfile(get_old_filename($permalink)))),
+#			remove_unimportant_iki_differences(tidy(readfile(get_new_filename($permalink)))),
+#			qq{old and new $permalink are similar enough},
+#		);
 	}
 }
 

@@ -19,6 +19,8 @@ pairs to parse to data structures that deep-compare equal.
 `ikiwiki-import` claims to perform an accurate and complete import
 of your data. Are you willing to believe it?
 
+    :; OLD=www.schmonz.com && ( cd $OLD && for i in $(echo [[:digit:]]*); do find $i -type f | sed -e 's|/index.html$||'; done ) | xargs ./bin/ikiwiki-import-check
+
 #### Basic sanity-checking
 
 Does `find $srcdir -type f | xargs wc -l` produce the number of
