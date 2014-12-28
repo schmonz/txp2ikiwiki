@@ -137,7 +137,7 @@ details. We may want to incorporate your ideas into `ikiwiki-import-check`.
 
 - Metadata
     - ID
-    - visible
+    - visible (or spam, or unmoderated)
     - title ("subject")
     - author name
     - author email

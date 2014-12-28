@@ -299,6 +299,36 @@ sub _expand_txp_tru_podcast {
 	# that's the field whose value needs to be passed in here
 }
 
+sub _normalize_comment {
+	my ($raw_comment) = @_;
+	my $normalized_comment;
+
+	my %rules = (
+		id		=> $raw_comment->{discussid},
+		postid		=> $raw_comment->{parentid},
+		author_name	=> $raw_comment->{name},
+		author_email	=> $raw_comment->{email},
+		author_url	=> $raw_comment->{web},
+		author_ip	=> $raw_comment->{ip},
+		creation_date	=> $raw_comment->{posted},
+		text_format	=> 'html',
+		#text_encoding	=> undef,
+		body		=> $raw_comment->{message},
+		visible		=> $raw_comment->{visible}, # XXX yes/no?
+	);
+
+	for my $key (keys %rules) {
+		my $rule = $rules{$key};
+		if ('CODE' eq ref($rule)) {
+			$normalized_comment->{$key} = $rule->();
+		} else {
+			$normalized_comment->{$key} = $rule;
+		}
+	}
+
+	return $normalized_comment;
+}
+
 sub get_posts {
 	my ($self) = @_;
 	my @normalized_posts;
@@ -317,12 +347,22 @@ sub get_posts {
 	}
 	$sth->finish();
 
+	$sth = $self->{dbh}->prepare(
+		"SELECT * FROM txp_discuss WHERE parentid=?"
+		. " ORDER BY posted ASC",
+	);
 	foreach my $post (@posts) {
+		my @comments;
+		$sth->execute($post->{id});
+		while (my $raw_comment = $sth->fetchrow_hashref()) {
+			push @comments, _normalize_comment($raw_comment);
+		}
 		push @normalized_posts, IkiWiki::Import::NormalizedPost->new(
 			$post,
-			undef,
+			\@comments,
 		);
 	}
+	$sth->finish();
 
 	return @normalized_posts;
 }
@@ -353,7 +393,7 @@ use Params::Validate qw(:all);
 sub new {
 	my ($class, $post, $comments) = validate_pos(@_, 1,
 		{ type => HASHREF },
-		{ type => UNDEF },
+		{ type => ARRAYREF },
 	);
 	my $self = $post;
 	$post->{comments} = $comments;
@@ -449,6 +489,35 @@ sub serialize {
 		),
 		"$srcdir/$serialized{post}",
 	);
+
+	eval q{
+		use IPC::Open2;
+	};
+	if ($@) {
+		die "can't talk to ikiwiki-comment: $@";
+	}
+
+use File::chdir;
+local $CWD = '../ikiwiki';
+	for my $comment (@{$formatted_post->{normalized_post}->{comments}}) {
+		my @command = (
+			'perl',
+			'ikiwiki-comment.in',
+			"../txp2ikiwiki/$srcdir/$serialized{post}",
+			"--username=$comment->{author_name}",
+			"--date=$comment->{creation_date}",
+		);
+		my $pid = eval {
+			open2(*OUT, *IN, @command);
+		};
+		if ($@) {
+			die "can't pipe to ikiwiki-comment: $!";
+		}
+		print IN $comment->{body};
+		close IN;
+		my @unlikely = <OUT>;
+		waitpid $pid, 0;
+	}
 
 	return %serialized;
 }

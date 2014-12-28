@@ -149,11 +149,11 @@ sub main_populates_srcdir {
 sub generate_destdir {
 	my ($srcdir, $destdir) = @_;
 	# XXX really want $setupfile filled in with srcdir and destdir
-	# -plugin comments
-	# -set comments_pagespec='*'
 	my $command = 'ikiwiki';
 	$command .= ' -plugin textile';
 	$command .= ' -plugin tag';
+	$command .= ' -plugin comments';
+	$command .= ' -set comments_pagespec="*"';
 	$command .= ' -set allow_symlinks_before_srcdir=1';
 	$command .= ' -verbose';
 	$command .= " $srcdir $destdir";
