@@ -343,7 +343,10 @@ sub get_posts {
 	);
 	$sth->execute();
 	while (my $raw_post = $sth->fetchrow_hashref()) {
-		push @posts, _normalize_post($raw_post);
+		my $post = _normalize_post($raw_post);
+		push @posts, $post if $post->{visible};
+		# XXX I hope there can't be comments on non-visible posts
+		# XXX also I hope I remember to save non-visible posts
 	}
 	$sth->finish();
 
@@ -355,7 +358,9 @@ sub get_posts {
 		my @comments;
 		$sth->execute($post->{id});
 		while (my $raw_comment = $sth->fetchrow_hashref()) {
-			push @comments, _normalize_comment($raw_comment);
+			my $comment = _normalize_comment($raw_comment);
+			push @comments, $comment if $comment->{visible};
+			# XXX the rest need moderation, or are spam
 		}
 		push @normalized_posts, IkiWiki::Import::NormalizedPost->new(
 			$post,
