@@ -151,30 +151,6 @@ details. We may want to incorporate your ideas into `ikiwiki-import-check`.
     - body
 - pass into `NormalizedPost->new()`
 
-### Comments: ikiformat-and-serialize
-
-- Render HTML from one becommented post
-    - (and maybe one unbecommented post)
-- Inspect HTML for signs of expected comments
-- Give `ikiwiki-comment` optional params: format, username, subject, date...
-- Let `ikiwiki-comment` optionally take content on `<STDIN>`
-- Pipe each comment body to `ikiwiki-comment`
-- Good enough? Or try to pass ikiformatted into `ikiwiki-comment`?
-
-### Comments: ikiformat, then serialize
-
-- If happy with previous, maybe don't bother with this
-- In `ikiwiki-comment`, extract compute-unique-filename method
-- Move method to `IkiWiki::Plugin::comments`
-- Do my own ikiformatting
-- Load the plugin, call the method, `writefile()` into it
-
-### Comments: inspect rendered HTML post
-
-- Is post content followed by its comments, oldest to newest?
-- Is each comment's HTML identical to what came out of the database?
-- Does the metadata match up with Textpattern's display?
-
 ## Implementation: compare `jekyll-import`'s Textpattern importer
 
 - `lib/jekyll-import/importers/textpattern.rb`
