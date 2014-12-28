@@ -511,6 +511,9 @@ local $CWD = '../ikiwiki';
 			"../txp2ikiwiki/$srcdir/$serialized{post}",
 			"--username=$comment->{author_name}",
 			"--date=$comment->{creation_date}",
+			"--url=$comment->{author_url}",
+			"--email=$comment->{author_email}",
+			"--ip=$comment->{author_ip}",
 		);
 		my $pid = eval {
 			open2(*OUT, *IN, @command);

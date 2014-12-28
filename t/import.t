@@ -154,6 +154,7 @@ sub generate_destdir {
 	$command .= ' -plugin tag';
 	$command .= ' -plugin comments';
 	$command .= ' -set comments_pagespec="*"';
+	$command .= ' -set comments_allowauthor=1';
 	$command .= ' -set allow_symlinks_before_srcdir=1';
 	$command .= ' -verbose';
 	$command .= " $srcdir $destdir";
