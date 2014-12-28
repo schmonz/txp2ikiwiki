@@ -196,6 +196,14 @@ sub _normalize_post {
 		},
 		text_format	=> 'txtl',
 		#text_encoding	=> undef,
+		enclosure	=> sub {
+			my $id = $raw_post->{custom_1};
+			my $filename = $raw_post->{filename};
+			if (defined $id && defined $filename) {
+				return "file_download/$id/$filename";
+			}
+			return undef;
+		},
 		excerpt		=> $raw_post->{Excerpt},
 		body		=> sub {
 			my $body = $raw_post->{Body};
@@ -434,6 +442,8 @@ sub ikiformat {
 
 	my $tags = join(' ', @{$normalized_post->{tags}});
 	my $tagline = $tags ? "[[!tag $tags]]" : "";
+	my $enclosure = $normalized_post->{enclosure};
+	my $enclosureline = defined $enclosure ? "[[!meta enclosure=\"$enclosure\"]]\n" : "";
 
 	my $devnull =<<EOT;
 <!-- ikiwiki-import id: $normalized_post->{id} -->
@@ -448,7 +458,7 @@ EOT
 [[!meta title="""$normalized_post->{title}"""]]
 [[!meta date="$normalized_post->{creation_date}"]]
 [[!meta updated="$normalized_post->{modification_date}"]]
-$tagline
+$tagline$enclosureline
 
 $normalized_post->{body}
 EOT
