@@ -1,0 +1,143 @@
+# Diary of a site conversion
+
+## Write an automated conversion tool that solves enough of the problem
+
+`ikiwiki-import` works in a way I trust and handles most of the
+tedium, letting me start benefiting from the ikiwiki way (edit some
+files, rebuild, commit if it's good) while I look after the remaining
+details. (It would be nice if `ikiwiki-import` left me even less
+to do.)
+
+`ikiwiki-import-check` helps me believe that `ikiwiki-import`
+performed an accurate and complete import of my data. (It would be
+nice if `ikiwiki-import-check` gave me even more confidence.)
+
+I'm coming from Textpattern (a MySQL-backed CMS), but `ikiwiki-import`
+can easily be extended to handle your data source.
+
+## Make a local copy of the source to be imported
+
+In my case, Textpattern's database:
+
+    :myserver; mysqldump XXX > source.sql
+    :mylaptop; mysql XXX < source.sql
+    :mylaptop; mysql XXX-remove-database-password
+
+XXX and maybe `config.php`
+
+## Run the tool locally
+
+    :mylaptop; SRCDIR=`pwd`/aftersrc
+    :mylaptop; ./bin/ikiwiki-import $SRCDIR verysmall.setup textpattern dbname schmonz_textpattern user schmonz
+
+## Do basic sanity-checking
+
+Does `find $SRCDIR -type f | xargs wc -l` produce the number of posts
+and comments (combined) that you're expecting?
+
+## Try browsing around
+
+    :mylaptop; DESTDIR=`pwd`/afterhtml
+    :mylaptop; ikiwiki $SRCDIR $DESTDIR -verbose -plugin sidebar -plugin theme -plugin inline -plugin trail -plugin textile -plugin tag -plugin comments -set comments_pagespec='*' -set comments_allowauthor=1 -set allow_symlinks_before_srcdir=1 -set libdir='../ikiwiki' -set wikiname='Amitai Schlair' --setup verysmall.setup --dumpsetup after.setup
+    :mylaptop; ikiwiki --setup after.setup --rebuild
+
+- Point a webserver at `$DESTDIR` so you can browse easily (because
+  `usedirs: 1`, the default, means lots of `subdir/index.html`)
+- Point your browser at the webserver and spot-check what you're seeing
+
+If this gives you enough confidence, you can stop here. I kept going.
+
+## Get a local mirror of your soon-to-be-old site
+
+Assuming the site you're importing is still live, web-crawl a static
+copy:
+
+    :mylaptop; wget --mirror -p --html-extension http://www.schmonz.com
+    :mylaptop; mv www.schmonz.com beforehtml
+    :mylaptop; STATICMIRROR=beforehtml
+
+Find and remove (or move aside) anything that isn't your content --
+index pages, archive pages, CSS, etc.:
+
+    :mylaptop; cd $STATICMIRROR
+    :mylaptop; find . -type f -name '*\?*' # turns up some stuff
+    :mylaptop; rm index.html\?.html index.html\?pg=*.html category/*/index.html\?pg=*.html ./2003/12/19/planworld-2003-12-19\?.html css.php\?n=*.css atom/index.html\?*=* rss/index.html\?*=*
+    :mylaptop; find . -type f -name '*\?*' # turns up nothing
+
+(You may want to keep these files off to the side, so you can
+consult them when you reimplement them with ikiwiki.)
+
+`wget` will have downloaded the permalink `/foo` as `/foo.html`,
+which matches neither your live site nor ikiwiki's default behavior.
+Put this in `usedirify` (and `chmod +x` it):
+
+    #!/bin/sh
+    `_BASENAME=$(basename $1 .html)`
+    `mkdir ${_BASENAME} && mv ${_BASENAME}.html ${_BASENAME}/index.html && echo ${_BASENAME}/index.html`
+
+Postprocess the mirrored permalinks with it:
+
+    :mylaptop; find . -type f -name '*.html' -a ! -name index.html -execdir /path/to/usedirify {} \;
+
+## Do more thorough sanity-checking
+
+For every page in `$STATICMIRROR`, diff against the corresponding
+page in `$DESTDIR` (or complain if it doesn't exist):
+
+    :mylaptop; cd $STATICMIRROR && for i in $(echo [[:digit:]]*); do find $i -type f | sed -e 's|/index.html$||'; done | xargs ./bin/ikiwiki-import-check
+
+And vice versa:
+
+    :;mylaptop cd $DESTDIR && for i in $(echo [[:digit:]]*); do find $i -type f | sed -e 's|/index.html$||'; done | xargs ./bin/ikiwiki-import-check
+
+Since HTML from different sources won't diff cleanly, you'll have
+to inspect the diffs and decide whether they're unimportant (such
+as the same words line-wrapped differently) or important (such as
+missing or wrongly encoded text). Tweak the import code and/or
+twiddle `after.setup` until you're convinced nothing much important
+is wrong.
+
+Congratulations! Your content has been imported into `$SRCDIR`.
+
+## Put `$SRCDIR` in revision control
+
+Your content's ready, but you'll probably need to do a few more
+things before your site's ready. Now's a good time to run
+`ikiwiki-makerepo`, or at least `git init` (and add and commit
+everything).
+
+## Add any out-of-band content
+
+Textpattern doesn't store images or other media in its database,
+just references to where they're stored on the host filesystem.  I
+didn't teach the importer to chase those references and fetch those
+files, but that's okay, I can yoink them from my static mirror:
+
+    :mylaptop; cp -R $STATICMIRROR/images $SRCDIR
+    :mylaptop; cp -R $STATICMIRROR/file_download $SRCDIR
+
+Add and commit.
+
+## Compose, arrange, and style your site
+
+Every published post and comment from my Textpattern site is accounted
+for, but my ikiwiki site still has the default front page. I put
+an `inline` directive in `$SRCDIR/index.mdwn` and the front page
+started looking better. I copied part of a Textpattern template to
+`$SRCDIR/sidebar.mdwn`, converting it to idiomatic Markdown with
+WikiLinks, and things looked better still. I might try to port over
+my CSS, or I might not. I'll try to avoid needing custom versions
+of ikiwiki's templates (if I can't, they'll need occasional
+maintenance). At some point I'll decide my site looks good enough.
+
+## Carefully preserve feeds
+
+Don't confuse aggregators. If ikiwiki's feed URLs will be different,
+provide HTTP redirects for your subscribers.
+
+Don't flood aggregators. If ikiwiki's article GUIDs will be different,
+override the GUIDs of your most recent articles to match.
+
+Podcasts are feeds with enclosures. In addition to the above, take
+care that the enclosure URLs don't change (or provide compatibility
+redirects).
