@@ -15,6 +15,18 @@ nice if `ikiwiki-import-check` gave me even more confidence.)
 I'm coming from Textpattern (a MySQL-backed CMS), but `ikiwiki-import`
 can easily be extended to handle your data source.
 
+## Prevent the soon-to-be-old site from being changed
+
+In my case, I created a MySQL user with read-only privileges to my
+site's database:
+
+    :myserver; mysql> CREATE USER 'schmonz_txp_ro'@'localhost' IDENTIFIED BY 'XXX';
+    :myserver; mysql> GRANT SELECT ON schmonz_textpattern.* TO 'schmonz_txp_ro'@'localhost';
+
+I edited `textpattern/textpattern/config.php` to connect via this
+read-only user instead. No new visitor logs get written, the site
+still works, etc.
+
 ## Make a local copy of the source to be imported
 
 In my case, Textpattern's database:
@@ -118,7 +130,7 @@ files, but that's okay, I can yoink them from my static mirror:
 
 Add and commit.
 
-## Compose, arrange, and style your site
+## Compose, arrange, and style your new ikiwiki site
 
 Every published post and comment from my Textpattern site is accounted
 for, but my ikiwiki site still has the default front page. I put
@@ -130,7 +142,7 @@ my CSS, or I might not. I'll try to avoid needing custom versions
 of ikiwiki's templates (if I can't, they'll need occasional
 maintenance). At some point I'll decide my site looks good enough.
 
-## Carefully preserve feeds
+## Preserve feeds
 
 Don't confuse aggregators. If ikiwiki's feed URLs will be different,
 provide HTTP redirects for your subscribers.
@@ -141,3 +153,70 @@ override the GUIDs of your most recent articles to match.
 Podcasts are feeds with enclosures. In addition to the above, take
 care that the enclosure URLs don't change (or provide compatibility
 redirects).
+
+<http://ikiwiki.info/tips/migrating_podcast_to_ikiwiki/>
+
+Carefully test that the transition will be smooth:
+
+- Run Textpattern on my laptop
+- Subscribe to feed in `rss2email`
+- Subscribe to podcast in iTunes, Downcast, Overcast
+- Switch over
+- See what happens
+
+## Preserve other important URLs
+
+I ran Analog over my webserver access log and looked at its "Request
+Report" for frequently requested pages I completely forgot about.
+Found some:
+
+- Do care: my resume
+    - `/resume` is redirecting to `/resume/amitai-schlair-resume.pdf`
+- Do care: static files outside Textpattern
+    - Anything in `/files/` I don't already have in `file_download`?
+    - `/google315ed148ae7a1278.html` symlink (for Google Analytics?)
+    - `/js/*` (I have no idea what this stuff is for)
+    - `/keybase.txt` (for Keybase.io)
+    - `/nottxp/*`
+    - `/ppw2014/*` (a recent talk)
+    - `/ssh-public-keys.txt` symlink
+- Do care: podcast enclosures, specifically
+    - In the CMS, you get a link to `/file_download/id/foo.mp3`
+    - Then you get an HTTP redirect to `/files/foo.mp3`
+    - And that's where the files are really stored
+    - It would be nice to store the enclosures in `files`, as before
+    - Can I do that without breaking existing feed enclosure URLs?
+        - HTTP redirects from `file_download` wouldn't help ikiwiki
+        - Symlinks from `file_download` might help ikiwiki
+        - Maybe both together would work well
+- Do care: custom RSS and Atom feeds
+    - `limit=100`
+    - `section=article`
+    - `category=`(one for every category)
+    - generate equivalent feeds somewhere, then HTTP redirect to them
+- Do care: lists of articles by category, at `/category/[Ff]oo`
+    - generate `/tag/foo` pages, then HTTP redirect to them
+- Don't care: `/css.php?foo`
+
+## Flip the switch
+
+Stop the web server and rotate the logs:
+
+    :myserver; cd logs
+    :myserver; cp access access.textpattern && > access
+    :myserver; cp errors errors.textpattern && > errors
+
+Edit the server configuration to serve your ikiwiki `$DESTDIR`.
+
+Start the server, watch the error log, and fix whatever's obviously
+wrong.
+
+-----
+
+## After it's live
+
+- Watch logs for 404s
+- Apply my (pending-review) patch for URLs in anonymous comments
+    - `ikiwiki --rebuild`
+- Convert `http://www.schmonz.com/...` references to relative WikiLinks
+    - Likewise for `/...` references
