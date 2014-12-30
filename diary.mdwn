@@ -44,7 +44,7 @@ XXX and maybe `config.php`
 
 ## Do basic sanity-checking
 
-Does `find $SRCDIR -type f | xargs wc -l` produce the number of posts
+Does `find $SRCDIR -type f | wc -l` produce the number of posts
 and comments (combined) that you're expecting?
 
 ## Try browsing around
@@ -96,11 +96,11 @@ Postprocess the mirrored permalinks with it:
 For every page in `$STATICMIRROR`, diff against the corresponding
 page in `$DESTDIR` (or complain if it doesn't exist):
 
-    :mylaptop; cd $STATICMIRROR && for i in $(echo [[:digit:]]*); do find $i -type f | sed -e 's|/index.html$||'; done | xargs ./bin/ikiwiki-import-check
+    :mylaptop; ( cd $STATICMIRROR && for i in $(echo [[:digit:]]*); do find $i -type f | sed -e 's|/index.html$||'; done ) | xargs ./bin/ikiwiki-import-check
 
 And vice versa:
 
-    :;mylaptop cd $DESTDIR && for i in $(echo [[:digit:]]*); do find $i -type f | sed -e 's|/index.html$||'; done | xargs ./bin/ikiwiki-import-check
+    :mylaptop; ( cd $DESTDIR && for i in $(echo [[:digit:]]*); do find $i -type f | sed -e 's|/index.html$||'; done ) | xargs ./bin/ikiwiki-import-check
 
 Since HTML from different sources won't diff cleanly, you'll have
 to inspect the diffs and decide whether they're unimportant (such

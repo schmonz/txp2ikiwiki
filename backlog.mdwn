@@ -1,25 +1,5 @@
 # Backlog
 
-## Posts: some aren't supposed to be visible
-
-- `{ 1 => draft, 2 => hidden, 3 => pending, 4 => live, 5 => sticky }`
-- What should we do with drafts? hidden? pending?
-- What about posts whose creation_date is in the future?
-- What about posts whose expiration_date is in the past?
-- Import all of these to `$SRCDIR.NON-VISIBLE-CONTENT`
-
-## Sections: decide what to do about them
-
-- my site does have a couple sections
-- is one of them the "default"? or what?
-- Import the unusual stuff `$SRCDIR.NON-VISIBLE-CONTENT`
-
-## Posts: permalinks really corresponding 1:1?
-
-- test old to new
-- test new to old
-- do the diffs
-
 ## Setup: `ikiwiki --changesetup` additional reasonable defaults
 
     add_plugins:
@@ -51,6 +31,7 @@
 
 - Get rid of `Params::Validate`
 - Make sure remaining dependencies are not always loaded (only where needed)
+- s|pkg/bin/perl|bin/perl|g
 - Run `perlcritic` with ikiwiki's `.perlcriticrc`
 - Add `ikiwiki-import.in` to the build
 - Run `make test`

@@ -149,7 +149,7 @@ sub get_old_filename {
 
 sub get_new_filename {
 	my ($permalink) = @_;
-	return _get_filename('outly', $permalink);
+	return _get_filename('afterhtml', $permalink);
 }
 
 sub _get_filename {
