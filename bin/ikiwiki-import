@@ -173,14 +173,21 @@ sub _normalize_post {
 
 	my %rules = (
 		id		=> $raw_post->{ID},
-		visible		=> (5 == $raw_post->{Status}
-					|| 4 == $raw_post->{Status}),
+		visible		=> ((5 == $raw_post->{Status}
+					|| 4 == $raw_post->{Status})
+					&& $raw_post->{Section} ne 'preview'),
 		title		=> $raw_post->{Title},
 		author_name	=> $raw_post->{RealName},
 		author_email	=> $raw_post->{email},
 		creation_date	=> $raw_post->{Posted},
 		modification_date => $raw_post->{LastMod},
-		expiration_date	=> $raw_post->{Expires},
+		expiration_date	=> sub {
+			if ('0000-00-00 00:00:00' eq $raw_post->{Expires}) {
+				return undef;
+			} else {
+				return $raw_post->{Expires};
+			}
+		},
 		url_slug	=> $raw_post->{url_title},
 		tags		=> sub {
 			my @tags;
@@ -322,7 +329,7 @@ sub _normalize_comment {
 		text_format	=> 'html',
 		#text_encoding	=> undef,
 		body		=> $raw_comment->{message},
-		visible		=> $raw_comment->{visible}, # XXX yes/no?
+		visible		=> (1 == $raw_comment->{visible}),
 	);
 
 	for my $key (keys %rules) {
@@ -351,10 +358,7 @@ sub get_posts {
 	);
 	$sth->execute();
 	while (my $raw_post = $sth->fetchrow_hashref()) {
-		my $post = _normalize_post($raw_post);
-		push @posts, $post if $post->{visible};
-		# XXX I hope there can't be comments on non-visible posts
-		# XXX also I hope I remember to save non-visible posts
+		push @posts, _normalize_post($raw_post);
 	}
 	$sth->finish();
 
@@ -366,9 +370,7 @@ sub get_posts {
 		my @comments;
 		$sth->execute($post->{id});
 		while (my $raw_comment = $sth->fetchrow_hashref()) {
-			my $comment = _normalize_comment($raw_comment);
-			push @comments, $comment if $comment->{visible};
-			# XXX the rest need moderation, or are spam
+			push @comments, _normalize_comment($raw_comment);
 		}
 		push @normalized_posts, IkiWiki::Import::NormalizedPost->new(
 			$post,
@@ -445,15 +447,6 @@ sub ikiformat {
 	my $enclosure = $normalized_post->{enclosure};
 	my $enclosureline = defined $enclosure ? "[[!meta enclosure=\"$enclosure\"]]\n" : "";
 
-	my $devnull =<<EOT;
-<!-- ikiwiki-import id: $normalized_post->{id} -->
-<!-- ikiwiki-import visible: $normalized_post->{visible} -->
-<!-- ikiwiki-import author_name: $normalized_post->{author_name} -->
-<!-- ikiwiki-import author_email: $normalized_post->{author_email} -->
-<!-- ikiwiki-import expiration_date: $normalized_post->{expiration_date} -->
-<!-- ikiwiki-import url_slug: $normalized_post->{url_slug} -->
-<!-- ikiwiki-import text_format: $normalized_post->{text_format} -->
-EOT
 	$ikiformatted{post} =<<EOT;
 [[!meta title="""$normalized_post->{title}"""]]
 [[!meta date="$normalized_post->{creation_date}"]]
@@ -490,19 +483,26 @@ sub serialize {
 	my ($formatted_post, $srcdir, $config) = @_;
 	my %serialized;
 
+	my $normalized_post = $formatted_post->{normalized_post};
+
+	$srcdir .= q{.NON-VISIBLE-CONTENT}
+		unless ($normalized_post->{visible}
+			&& _in_the_past($normalized_post->{creation_date})
+			&& ! _in_the_past($normalized_post->{expiration_date}));
+
 	$serialized{post} = _get_url_preserving_filename(
 		$config->{keep}->{timezone},
 		$config->{use_and_forget}->{permalink_format},
-		$formatted_post->{normalized_post}->{creation_date},
-		$formatted_post->{normalized_post}->{url_slug},
-		$formatted_post->{normalized_post}->{text_format},
+		$normalized_post->{creation_date},
+		$normalized_post->{url_slug},
+		$normalized_post->{text_format},
 	);
 	IkiWiki::writefile($serialized{post}, $srcdir, $formatted_post->get_post());
 	utime(
 		time(),
 		_get_time(
 			$config->{keep}->{timezone},
-			$formatted_post->{normalized_post}->{modification_date},
+			$normalized_post->{modification_date},
 		),
 		"$srcdir/$serialized{post}",
 	);
@@ -516,11 +516,13 @@ sub serialize {
 
 use File::chdir;
 local $CWD = '../ikiwiki';
-	for my $comment (@{$formatted_post->{normalized_post}->{comments}}) {
+	for my $comment (@{$normalized_post->{comments}}) {
+		die "non-visible comment ($comment->{id})"
+			unless $comment->{visible};
 		my @command = (
 			'perl',
 			'ikiwiki-comment.in',
-			"../txp2ikiwiki/$srcdir/$serialized{post}",
+			"$srcdir/$serialized{post}",
 			"--username=$comment->{author_name}",
 			"--date=$comment->{creation_date}",
 			"--url=$comment->{author_url}",
@@ -542,6 +544,20 @@ local $CWD = '../ikiwiki';
 	return %serialized;
 }
 
+sub _in_the_past {
+	my ($date) = @_;
+	return 0 unless defined $date;
+
+	eval q{
+		use Date::Parse;
+	};
+	if ($@) {
+		die "can't compute correct datetimes: $@";
+	}
+
+	return (str2time(scalar localtime()) - str2time($date) > 0);
+}
+
 sub _get_time {
 	my ($timezone, $date) = @_;
 
@@ -557,7 +573,6 @@ sub _get_time {
 
 sub _get_url_preserving_filename {
 	my ($timezone, $permalink_format, $date, $slug, $format) = @_;
-	$timezone = 'UTC'; # XXX why
 
 	eval q{
 		use POSIX qw(strftime);
@@ -567,7 +582,7 @@ sub _get_url_preserving_filename {
 	}
 	my $date_prefix = strftime(
 		$permalink_format,
-		gmtime(_get_time($timezone, $date)),
+		localtime(_get_time($timezone, $date)),
 	);
 
 	return qq{$date_prefix/$slug.$format};

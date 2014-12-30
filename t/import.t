@@ -41,7 +41,7 @@ sub normalize_one {
 		author_email		=> '',
 		creation_date		=> '',
 		modification_date	=> '',
-		expiration_date		=> '',
+#		expiration_date		=> '',
 		url_slug		=> '',
 		tags			=> 'ARRAY',
 		text_format		=> '',
@@ -83,21 +83,10 @@ sub format_one {
 
 	my @lines = split(/\n/m, $formatted_post->get_post());
 
-	my $commented = sub { qr|^<!-- ikiwiki-import $_[0]: .+ -->$| };
-
-	like(shift @lines, $commented->('id'));
-	like(shift @lines, $commented->('visible'));
 	like(shift @lines, qr|^\[\[!meta title=".+"\]\]$|);
-	like(shift @lines, $commented->('author_name'));
-	like(shift @lines, $commented->('author_email'));
 	like(shift @lines, qr|^\[\[!meta date=".+"\]\]$|);
-	like(shift @lines, $commented->('modification_date'));
-	like(shift @lines, $commented->('expiration_date'));
-	like(shift @lines, $commented->('url_slug'));
+	like(shift @lines, qr|^\[\[!meta updated=".+"\]\]$|);
 	like(shift @lines, qr|^\[\[!tag |);
-	like(shift @lines, $commented->('text_format'));
-	#like(shift @lines, $commented->('text_encoding'));
-	#like(shift @lines, $commented->('excerpt'));
 	like(shift @lines, qr|^$|);
 
 	my $body = join("\n", @lines);
