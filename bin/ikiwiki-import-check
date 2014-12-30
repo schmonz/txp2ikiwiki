@@ -144,12 +144,12 @@ sub _colorize_diff {
 
 sub get_old_filename {
 	my ($permalink) = @_;
-	return _get_filename('www.schmonz.com', $permalink);
+	return _get_filename('beforehtml', $permalink);
 }
 
 sub get_new_filename {
 	my ($permalink) = @_;
-	return _get_filename('afterhtml', $permalink);
+	return _get_filename('html', $permalink);
 }
 
 sub _get_filename {

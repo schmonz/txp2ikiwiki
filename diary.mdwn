@@ -160,7 +160,7 @@ Carefully test that the transition will be smooth:
 
 - Run Textpattern on my laptop
 - Subscribe to feed in `rss2email`
-- Subscribe to podcast in iTunes, Downcast, Overcast
+- Subscribe to podcast in iTunes, Downcast (just like they already are)
 - Switch over
 - See what happens
 
@@ -215,8 +215,23 @@ wrong.
 
 ## After it's live
 
+- Add myself to IkiWikiUsers!
+- Git integration (and autocommit for tags, comments)
 - Watch logs for 404s
 - Apply my (pending-review) patch for URLs in anonymous comments
     - `ikiwiki --rebuild`
+- Apply my `wordcount` plugin for posts
 - Convert `http://www.schmonz.com/...` references to relative WikiLinks
     - Likewise for `/...` references
+    - But _not_ for links that turn into feed URLs, if there are any
+- Wherever I have HTTP redirects, make sure they're going to be countable
+    - Try to have them not depend on webserver (someday, `bozohttpd`)
+- Tag cloud (pagestats plugin), other cool tag stuff
+- Convert Textile to Markdown, disable Textile input
+- Stop accepting new comments after some time has passed? Only if spammy
+- add_plugins:
+    - blogspam
+    - calendar
+    - highlight (for OS X too)
+    - moderatedcomments
+- Comments on podcasts have a weird "download" link under the commentform

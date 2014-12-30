@@ -1,28 +1,5 @@
 # Backlog
 
-## Setup: `ikiwiki --changesetup` additional reasonable defaults
-
-    add_plugins:
-    - blogspam
-    - calendar
-    - comments
-    - highlight (if needed)
-    - inline
-    - moderatedcomments
-    - pagestats
-    - search
-    - sidebar
-    - tag
-    - textile
-    - typography
-    disable_plugins:
-    - editpage
-    - recentchanges
-    allowrss: 1
-    allowatom: 1
-    omega_cgi: /path/to/xapian-omega
-    tagbase: probably "tag"
-
 ## Implementation: compare `jekyll-import`'s Textpattern importer
 
 - `lib/jekyll-import/importers/textpattern.rb`
