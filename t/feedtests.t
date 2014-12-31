@@ -36,9 +36,9 @@ sub test_entries {
 			title
 			link
 			id
+			author
 		);
 		# Textpattern didn't put tags/category in feed
-		# XXX OK that ikiwiki won't put author in feed?
 		# Textpattern didn't put modified in feed
 		# XXX OK that issued appears off by five hours?
 
@@ -96,8 +96,8 @@ sub test_entries {
 
 my $old_rss = XML::Feed->parse('txp-limit-100.rss');
 my $old_atom = XML::Feed->parse('txp-limit-100.atom');
-my $new_rss = XML::Feed->parse('html/index.rss');
-my $new_atom = XML::Feed->parse('html/index.atom');
+my $new_rss = XML::Feed->parse('../www.schmonz.com/html/index.rss');
+my $new_atom = XML::Feed->parse('../www.schmonz.com/html/index.atom');
 
 test_feed($old_atom, $old_rss);
 test_entries($old_atom, $old_rss);

@@ -200,9 +200,9 @@ Found some:
         - HTTP redirects from `file_download` wouldn't help ikiwiki
         - Symlinks from `file_download` might help ikiwiki
         - Maybe both together would work well
+    - Or I could just leave it
 - Do care: custom RSS and Atom feeds
     - `limit=100`
-    - `section=article`
     - `category=`(one for every category)
     - generate equivalent feeds somewhere, then HTTP redirect to them
 - Do care: lists of articles by category, at `/category/[Ff]oo`
@@ -211,13 +211,24 @@ Found some:
 
 ## Flip the switch
 
+Edit the server configuration to serve your ikiwiki `$DESTDIR`.
+
+HTTP redirects:
+    /rss/?category=Foo -> /rss/?category=foo (force lcase)
+    /rss/?category=foo -> /tag/foo/index.rss (remap to tag feeds)
+    same for atom
+    /?c=Foo -> /category/Foo (force clean URLs)
+    /category/Foo -> /category/foo (force lcase)
+    /category/foo -> /tag/foo (remap to tag pages)
+    /?q=foo -> /cgi-bin/path/to/ikiwiki?P=foo
+    Maybe redirects from /files/ to /file_download?
+    Don't forget about conf/redirect-podcast-for-txp405
+
 Stop the web server and rotate the logs:
 
     :myserver; cd logs
     :myserver; cp access access.textpattern && > access
     :myserver; cp errors errors.textpattern && > errors
-
-Edit the server configuration to serve your ikiwiki `$DESTDIR`.
 
 Start the server, watch the error log, and fix whatever's obviously
 wrong.
@@ -250,3 +261,5 @@ wrong.
     - highlight (for OS X too)
     - moderatedcomments
 - Comments on podcasts have a weird "download" link under the commentform
+- Change my "verification details" in Google Webmaster Tools so I don't
+    need a file lying around
