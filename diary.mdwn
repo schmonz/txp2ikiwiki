@@ -31,8 +31,8 @@ still works, etc.
 
 In my case, Textpattern's database:
 
-    :myserver; mysqldump XXX > source.sql
-    :mylaptop; mysql XXX < source.sql
+    :myserver; mysqldump -u schmonz -p --databases schmonz_textpattern > source.sql
+    :mylaptop; mysql -u schmonz -p < source.sql
     :mylaptop; mysql XXX-remove-database-password
 
 XXX and maybe `config.php`
@@ -148,7 +148,11 @@ Don't confuse aggregators. If ikiwiki's feed URLs will be different,
 provide HTTP redirects for your subscribers.
 
 Don't flood aggregators. If ikiwiki's article GUIDs will be different,
-override the GUIDs of your most recent articles to match.
+override the GUIDs of your most recent articles to match. I took
+the permalinks and GUIDs from Textpattern's RSS feed (which are the
+same as those for the Atom feed, I checked) and applied them to my
+100 most recent posts (since that's the hardcoded maximum feed size
+and I know I've got some subscribers to that).
 
 Podcasts are feeds with enclosures. In addition to the above, take
 care that the enclosure URLs don't change (or provide compatibility
@@ -156,13 +160,20 @@ redirects).
 
 <http://ikiwiki.info/tips/migrating_podcast_to_ikiwiki/>
 
-Carefully test that the transition will be smooth:
+I could have set up a non-production instance of Textpattern,
+subscribed to my podcasts, and migrated to a non-production instance
+of ikiwiki. But I already tested that pretty well when I developed
+ikiwiki's fancypodcast support.
 
-- Run Textpattern on my laptop
-- Subscribe to feed in `rss2email`
-- Subscribe to podcast in iTunes, Downcast (just like they already are)
-- Switch over
-- See what happens
+Instead, I wrote automated tests (see `t/feedtests.t`) to compare
+local copies of Textpattern's RSS and Atom feeds to each other,
+Textpattern RSS to ikiwiki RSS, and Textpattern Atom to ikiwiki
+Atom. Then I wrote `import-guids` to pull Textpattern's GUIDs (and
+permalinks, for good measure) out of the feed and annotate the
+corresponding ikiwiki posts with matching meta tags. Then I used
+`git diff` to check my work and `git commit` when I was satisfied
+with it -- exactly the sort of safety that reinforces my choice to
+migrate to ikiwiki.
 
 ## Preserve other important URLs
 
@@ -215,15 +226,19 @@ wrong.
 
 ## After it's live
 
+- Prepend "Yareev's schmonz.com: " to all page titles but the topmost
+    - Patch `IkiWiki/Render.pm` around line 128
 - Add myself to IkiWikiUsers!
 - Git integration (and autocommit for tags, comments)
 - Watch logs for 404s
+- Crawl site for broken links
 - Apply my (pending-review) patch for URLs in anonymous comments
     - `ikiwiki --rebuild`
 - Apply my `wordcount` plugin for posts
 - Convert `http://www.schmonz.com/...` references to relative WikiLinks
     - Likewise for `/...` references
     - But _not_ for links that turn into feed URLs, if there are any
+    - meta permalink can be just /2014/foo
 - Wherever I have HTTP redirects, make sure they're going to be countable
     - Try to have them not depend on webserver (someday, `bozohttpd`)
 - Tag cloud (pagestats plugin), other cool tag stuff

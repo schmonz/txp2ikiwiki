@@ -1,0 +1,30 @@
+#!/usr/pkg/bin/perl
+
+use warnings;
+use strict;
+
+use XML::Feed;
+
+my $txp_rss = XML::Feed->parse('txp-limit-100.rss');
+for my $entry ($txp_rss->entries()) {
+	my $link = $entry->link();
+	$link =~ s|http://www\.schmonz\.com/||;
+	print "===> $link.txtl\n";
+	my $file = "src/$link.txtl";
+	open(my $in, '<', $file) || die "can't open $file: $!";
+	chomp(my @input = <$in>);
+	close($in) || die "can't close $file: $!";
+	my @output;
+	for my $line (@input) {
+		push @output, "$line\n";
+		if ($line =~ /^\[\[!tag .*]]$/) {
+			push @output, "[[!meta permalink=\"http://www.schmonz.com/" . $link . "\"]]\n";
+			push @output, "[[!meta guid=\"" . $entry->id() . "\"]]\n";
+		}
+	}
+	open(my $out, '>', $file) || die "can't open $file: $!";
+	for my $line (@output) {
+		print $out $line;
+	}
+	close($out) || die "can't close $file: $!";
+}
