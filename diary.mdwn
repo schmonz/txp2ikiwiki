@@ -232,11 +232,13 @@ wrong.
 
 ## After it's live
 
-- Prepend "Yareev's schmonz.com: " to all page titles but the topmost
-    - Patch `IkiWiki/Render.pm` around line 128
-- Crawl site for broken links
+- Comment usernames weren't links, but now they're not even there
+    - because I said `.author` should display none!
 - Apply my (pending-review) patch for URLs in anonymous comments
     - `ikiwiki --rebuild`
+- Crawl site for broken links
+- Prepend "Yareev's schmonz.com: " to all page titles but the topmost
+    - Patch `IkiWiki/Render.pm` around line 128
 - Apply my `wordcount` plugin for posts
 - Convert `http://www.schmonz.com/...` references to relative WikiLinks
     - Likewise for `/...` references
