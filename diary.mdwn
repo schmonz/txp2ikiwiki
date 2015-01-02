@@ -232,30 +232,45 @@ wrong.
 
 ## After it's live
 
-- Comment usernames weren't links, but now they're not even there
-    - because I said `.author` should display none!
-- Apply my (pending-review) patch for URLs in anonymous comments
-    - `ikiwiki --rebuild`
-- Crawl site for broken links
+### Site
+
 - Prepend "Yareev's schmonz.com: " to all page titles but the topmost
     - Patch `IkiWiki/Render.pm` around line 128
-- Apply my `wordcount` plugin for posts
+- Merge `resume.git` into `src/resume`
+- Encourage future simplicity:
+    - Run under `bozohttpd` on `localhost`
+    - Prove that Apache is only for complex redirects (and reverse-proxy)
+    - Start counting and analyzing the redirects now
+    - So that when I can turn off Apache, I'll know
+- Change my "verification details" in Google Webmaster Tools so I don't
+    need a file lying around
+- Crawl for broken links
+- Add `ikiwiki.conf` to git on the `setup` branch
+- Preview locally with `post-commit` before pushing to publish
+
+### Posts
+
+- Make a template for new posts, so it's dumb-easy to write one
 - Convert `http://www.schmonz.com/...` references to relative WikiLinks
     - Likewise for `/...` references
     - But _not_ for links that turn into feed URLs, if there are any
     - meta permalink can be just /2014/foo
-- Wherever I have HTTP redirects, make sure they're going to be countable
-    - Try to have them not depend on webserver (someday, `bozohttpd`)
-- Tag cloud (pagestats plugin), other cool tag stuff
-- Convert Textile to Markdown, disable Textile input
-- Stop accepting new comments after some time has passed? Only if spammy
-- add_plugins:
-    - blogspam
-    - calendar
-    - highlight (for OS X too)
-    - moderatedcomments
-- Comments on podcasts have a weird "download" link under the commentform
-- Change my "verification details" in Google Webmaster Tools so I don't
-    need a file lying around
-- Make a template for new blog posts
-- Take my media files out of git, put them in an underlay?
+- Apply and enable my `wordcount` plugin
+- Review and unpublish sufficiently unprofessional old stuff
+- Turn on calendar, tag cloud
+- Convert all Textile to Markdown, get rid of Textile
+
+### Comments
+
+- Stop hiding comment authors just because I don't want every every post
+  to say "Amitai Schlair" real big (see `local.css` for `.author`)
+- Apply my (pending-review) patch for URLs in anonymous comments
+- Update blogspam plugin to [the new API](http://blogspam.net/api/2.0/)
+- Enable blogspam plugin
+- Add a `cron`-able way to stop accepting comments after N days
+
+### Podcasts
+
+- Add a "subscribe" link to podcast posts
+- While commenting, the commentform has a weird "Download" link
+- Do I really want to remove media from git and put in an underlay?
