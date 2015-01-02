@@ -265,7 +265,6 @@ wrong.
 - Stop hiding comment authors just because I don't want every every post
   to say "Amitai Schlair" real big (see `local.css` for `.author`)
 - Apply my (pending-review) patch for URLs in anonymous comments
-- Update blogspam plugin to [the new API](http://blogspam.net/api/2.0/)
 - Enable blogspam plugin
 - Add a `cron`-able way to stop accepting comments after N days
 
