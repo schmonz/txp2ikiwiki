@@ -236,17 +236,19 @@ wrong.
 
 - Prepend "Yareev's schmonz.com: " to all page titles but the topmost
     - Patch `IkiWiki/Render.pm` around line 128
-- Merge `resume.git` into `src/resume`
 - Encourage future simplicity:
     - Run under `bozohttpd` on `localhost`
     - Prove that Apache is only for complex redirects (and reverse-proxy)
     - Start counting and analyzing the redirects now
     - So that when I can turn off Apache, I'll know
-- Change my "verification details" in Google Webmaster Tools so I don't
-    need a file lying around
 - Crawl for broken links
+    - Why so many 404s for `comments.atom`?
 - Add `ikiwiki.conf` to git on the `setup` branch
 - Preview locally with `post-commit` before pushing to publish
+- Change my "verification details" in Google Webmaster Tools so I don't
+  need a file lying around
+    - Meta tag seems like it should work after disabling htmlscrubber,
+      but it renders wrong (test and fix `meta` plugin?)
 
 ### Posts
 
@@ -262,8 +264,6 @@ wrong.
 
 ### Comments
 
-- Stop hiding comment authors just because I don't want every every post
-  to say "Amitai Schlair" real big (see `local.css` for `.author`)
 - Apply my (pending-review) patch for URLs in anonymous comments
 - Enable blogspam plugin
 - Add a `cron`-able way to stop accepting comments after N days
@@ -273,3 +273,5 @@ wrong.
 - Add a "subscribe" link to podcast posts
 - While commenting, the commentform has a weird "Download" link
 - Do I really want to remove media from git and put in an underlay?
+- `tru_podcast` allowed a relative or even external link; fix importer
+  for relative and think about whether ikiwiki should do external
