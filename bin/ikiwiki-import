@@ -514,14 +514,11 @@ sub serialize {
 		die "can't talk to ikiwiki-comment: $@";
 	}
 
-use File::chdir;
-local $CWD = '../ikiwiki';
 	for my $comment (@{$normalized_post->{comments}}) {
 		die "non-visible comment ($comment->{id})"
 			unless $comment->{visible};
 		my @command = (
-			'perl',
-			'ikiwiki-comment.in',
+			'ikiwiki-comment',
 			"$srcdir/$serialized{post}",
 			"--username=$comment->{author_name}",
 			"--date=$comment->{creation_date}",
