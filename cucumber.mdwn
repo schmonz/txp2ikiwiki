@@ -1,0 +1,75 @@
+20150107 schmonz: I did not wind up doing my site conversion work
+in this way. It might be simpler to write a spec for my website
+now, and I might still like to.
+
+-----
+
+# A spec for my website
+
+If my site were just a bunch of pages, I'd know what it does, and
+I'd be able to tell whether the converted site did the same things.
+It's not, so I don't, and I can't. Plus, some of what it does is
+RSS and podcasts, and I'm sure I'd like to not flood aggregators.
+So I'm going to start by figuring out as much as I can about what
+my website currently does.
+
+I'm going to describe each feature in
+[Gherkin](https://github.com/cucumber/cucumber/wiki/Gherkin)-inflected
+English, and I'm going to write the corresponding [step
+definitions](https://github.com/cucumber/cucumber/wiki/Step-Definitions) in
+Perl with the help of
+[Test::BDD::Cucumber](http://search.cpan.org/dist/Test-BDD-Cucumber/). The
+step definitions may need to be implemented differently for Textpattern
+and for ikiwiki; the feature definitions shouldn't need to change
+at all. I bet this'll be a fun way to work.
+
+Properties to be preserved:
+
+- URL structure
+- Content
+- Feeds
+- Appearance
+
+Properties to be gleefully jettisoned:
+
+- Apache
+- MySQL
+- PHP
+
+## Test mechanics
+
+### Can I describe features for more specific personas?
+
+- As a parent
+- As a friend
+- As a professional software developer
+- As a potential consulting client
+
+### Can I get `vim` to help me write for Cucumber?
+
+When Python `behave` and Ruby `cucumber` were installed, `vim`
+showed `>>` in the gutter for some lines. What was that trying to
+help me with? Can I get it to help me with Perl `Test::BDD::Cucumber`?
+
+> It's trying to show me where step definitions are missing. Would be
+> nice to teach it about the Cucumber implementation I'm using.
+
+## Can I rename `step_definitions` to `steps`?
+
+I think I just like it better. To make the change safely, I have to
+compare output from `prove -v` before and after.
+
+## Can I get `prove` to fail when steps are missing?
+
+Right now I have to look carefully through `prove -v`. Should I
+want to be running `pherkin` instead?
+
+## Can I store `steps` elsewhere?
+
+I might prefer them next to `features`. But only if that's common
+in Greater Cucumberland.
+
+## Can I test one feature at a time?
+
+- With `pherkin`, yes
+- With `prove`?
