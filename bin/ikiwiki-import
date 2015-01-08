@@ -471,16 +471,17 @@ sub ikiformat {
 		_escape_ikiwiki_directives($normalized_post->{body});
 
 	my $tags = join(' ', @{$normalized_post->{tags}});
-	my $tagline = $tags ? "[[!tag $tags]]" : "";
+	my $tagline = $tags ? "[[!tag $tags]]\n" : "";
 	my $enclosure = $normalized_post->{enclosure};
 	my $enclosureline = defined $enclosure ? "[[!meta enclosure=\"$enclosure\"]]\n" : "";
+	my $excerpt = $normalized_post->{excerpt};
+	my $excerptlines = "" ne $excerpt ? "[[!more linktext=\"Read more...\" text=\"\"\"\n$excerpt\n\"\"\"]]\n" : "";
 
 	$ikiformatted{post} =<<EOT;
 [[!meta title="""$normalized_post->{title}"""]]
 [[!meta date="$normalized_post->{creation_date}"]]
 [[!meta updated="$normalized_post->{modification_date}"]]
-$tagline$enclosureline
-
+${tagline}${enclosureline}${excerptlines}
 $normalized_post->{body}
 EOT
 
