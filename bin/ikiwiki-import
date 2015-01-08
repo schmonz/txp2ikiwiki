@@ -147,9 +147,16 @@ sub getsetup_timezone {
 sub year_month_day_permalink_formatter {
 	my ($section, $id, $date, $timezone) = @_;
 
+	eval q{
+		use POSIX qw(strftime);
+	};
+	if ($@) {
+		die "can't compute correct datetimes: $@";
+	}
+
 	return strftime(
 		q{%Y/%m/%d},
-		localtime(_get_time($timezone, $date)),
+		localtime(IkiWiki::Import::SerializedPost::_get_time($timezone, $date)),
 	);
 }
 
@@ -595,13 +602,6 @@ sub _get_time {
 
 sub _get_url_preserving_filename {
 	my ($permalink_formatter, $timezone, $section, $id, $date, $slug, $format) = @_;
-
-	eval q{
-		use POSIX qw(strftime);
-	};
-	if ($@) {
-		die "can't compute correct datetimes: $@";
-	}
 
 	my $prefix = $permalink_formatter->($section, $id, $date, $timezone);
 	return qq{$prefix/$slug.$format};
