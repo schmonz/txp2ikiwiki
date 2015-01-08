@@ -238,7 +238,13 @@ sub _normalize_post {
 			}
 			return undef;
 		},
-		excerpt		=> $raw_post->{Excerpt},
+		excerpt		=> sub {
+			my $excerpt = $raw_post->{Excerpt};
+			$excerpt =~ s/\r\n/\n/g;
+			$excerpt =~ s/^\s+//;
+			$excerpt =~ s/\s+$//;
+			return $excerpt;
+		},
 		body		=> sub {
 			my $body = $raw_post->{Body};
 			$body =~ s|\r\n|\n|g;
@@ -463,6 +469,22 @@ sub _escape_ikiwiki_directives {
 	return $author_meant_them_to_be_published;
 }
 
+sub body_starts_with_complete_excerpt {
+	my ($body, $excerpt) = @_;
+	return 1 if "" eq $excerpt;
+	return 1 if (0 == index $body, $excerpt);
+	return 0;
+}
+
+sub split_on_excerpt {
+	my ($normalized_body, $excerpt) = @_;
+	if ($excerpt) {
+		return ($excerpt, substr($normalized_body, length $excerpt));
+	} else {
+		return ($normalized_body, q{});
+	}
+}
+
 sub ikiformat {
 	my ($normalized_post) = @_;
 	my %ikiformatted;
@@ -475,14 +497,21 @@ sub ikiformat {
 	my $enclosure = $normalized_post->{enclosure};
 	my $enclosureline = defined $enclosure ? "[[!meta enclosure=\"$enclosure\"]]\n" : "";
 	my $excerpt = $normalized_post->{excerpt};
-	my $excerptlines = "" ne $excerpt ? "[[!more linktext=\"Read more...\" text=\"\"\"\n$excerpt\n\"\"\"]]\n" : "";
+	die "excerpt doesn't match: $normalized_post->{id}\n"
+		unless body_starts_with_complete_excerpt($normalized_post->{body}, $excerpt);
+	my ($body, $possiblymorebody) = split_on_excerpt($normalized_post->{body}, $excerpt);
+	if ("" ne $possiblymorebody) {
+		$possiblymorebody = "[[!more linktext=\"Read more...\" text=\"\"\"\n$possiblymorebody\n\"\"\"]]\n";
+	}
 
 	$ikiformatted{post} =<<EOT;
 [[!meta title="""$normalized_post->{title}"""]]
 [[!meta date="$normalized_post->{creation_date}"]]
 [[!meta updated="$normalized_post->{modification_date}"]]
-${tagline}${enclosureline}${excerptlines}
-$normalized_post->{body}
+${tagline}${enclosureline}
+
+$body
+$possiblymorebody
 EOT
 
 	return %ikiformatted;
