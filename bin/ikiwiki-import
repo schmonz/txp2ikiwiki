@@ -95,6 +95,7 @@ sub new {
 	my $class = shift;
 	my (%options) = validate(@_, {
 		dbname		=> 1,
+		table_prefix	=> { default => q{} },
 		host		=> { default => q{localhost} },
 		user		=> 1,
 		password	=> { default => q{} },
@@ -157,8 +158,9 @@ sub getsetup_permalink_format {
 sub _getsetup_foo {
 	my ($self, $txp_prefs_field) = @_;
 
+	my $tp = $self->{table_prefix};
 	my $sth = $self->{dbh}->prepare(
-		"SELECT val FROM txp_prefs WHERE name=?",
+		"SELECT val FROM ${tp}txp_prefs WHERE name=?",
 	);
 	$sth->execute($txp_prefs_field);
 	my $value = $sth->fetchrow_arrayref()->[0];
@@ -348,12 +350,13 @@ sub get_posts {
 	my ($self) = @_;
 	my @normalized_posts;
 
+	my $tp = $self->{tp};
 	my @posts;
 	my $sth = $self->{dbh}->prepare(
-		"SELECT * FROM textpattern"
-		. " LEFT JOIN txp_users ON textpattern.AuthorID=txp_users.name"
-		. " LEFT JOIN txp_image ON textpattern.Image=txp_image.id"
-		. " LEFT JOIN txp_file ON textpattern.custom_1=txp_file.id"
+		"SELECT * FROM ${tp}textpattern"
+		. " LEFT JOIN ${tp}txp_users ON ${tp}textpattern.AuthorID=txp_users.name"
+		. " LEFT JOIN ${tp}txp_image ON ${tp}textpattern.Image=txp_image.id"
+		. " LEFT JOIN ${tp}txp_file ON ${tp}textpattern.custom_1=txp_file.id"
 		. " ORDER BY Posted DESC",
 	);
 	$sth->execute();
@@ -363,7 +366,7 @@ sub get_posts {
 	$sth->finish();
 
 	$sth = $self->{dbh}->prepare(
-		"SELECT * FROM txp_discuss WHERE parentid=?"
+		"SELECT * FROM ${tp}txp_discuss WHERE parentid=?"
 		. " ORDER BY posted ASC",
 	);
 	foreach my $post (@posts) {
