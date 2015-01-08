@@ -65,7 +65,7 @@ sub get_config {
 		$config{keep}->{$k} = $source->$method();
 	}
 
-	for my $k (qw(permalink_format)) {
+	for my $k (qw(permalink_formatter)) {
 		my $method = qq{getsetup_$k};
 		$config{use_and_forget}->{$k} = $source->$method();
 	}
@@ -144,15 +144,32 @@ sub getsetup_timezone {
 	return $self->_getsetup_foo('timezone_key');
 }
 
-sub getsetup_permalink_format {
+sub year_month_day_permalink_formatter {
+	my ($section, $id, $date, $timezone) = @_;
+
+	return strftime(
+		q{%Y/%m/%d},
+		localtime(_get_time($timezone, $date)),
+	);
+}
+
+sub section_id_permalink_formatter {
+	my ($section, $id, $date, $timezone) = @_;
+
+	return qq{$section/$id};
+}
+
+sub getsetup_permalink_formatter {
 	my ($self) = @_;
-	my %permalink_formats = (
-		year_month_day_title	=> q{%Y/%m/%d},
+
+	my %permalink_formatters = (
+		year_month_day_title	=> \&year_month_day_permalink_formatter,
+		section_id_title		=> \&section_id_permalink_formatter,
 	);
 	my $permalink_format = $self->_getsetup_foo('permlink_mode');
 	die "unknown permalink format '$permalink_format'"
-		unless defined $permalink_formats{$permalink_format};
-	return $permalink_formats{$permalink_format};
+		unless defined $permalink_formatters{$permalink_format};
+	return $permalink_formatters{$permalink_format};
 }
 
 sub _getsetup_foo {
@@ -175,6 +192,7 @@ sub _normalize_post {
 
 	my %rules = (
 		id		=> $raw_post->{ID},
+		section	=> $raw_post->{Section},
 		visible		=> ((5 == $raw_post->{Status}
 					|| 4 == $raw_post->{Status})
 					&& $raw_post->{Section} ne 'preview'),
@@ -190,7 +208,7 @@ sub _normalize_post {
 				return $raw_post->{Expires};
 			}
 		},
-		url_slug	=> $raw_post->{url_title},
+		url_slug	=> substr($raw_post->{url_title}, 0, 200),
 		tags		=> sub {
 			my @tags;
 			for (qw(Category1 Category2)) {
@@ -350,13 +368,13 @@ sub get_posts {
 	my ($self) = @_;
 	my @normalized_posts;
 
-	my $tp = $self->{tp};
+	my $tp = $self->{table_prefix};
 	my @posts;
 	my $sth = $self->{dbh}->prepare(
 		"SELECT * FROM ${tp}textpattern"
-		. " LEFT JOIN ${tp}txp_users ON ${tp}textpattern.AuthorID=txp_users.name"
-		. " LEFT JOIN ${tp}txp_image ON ${tp}textpattern.Image=txp_image.id"
-		. " LEFT JOIN ${tp}txp_file ON ${tp}textpattern.custom_1=txp_file.id"
+		. " LEFT JOIN ${tp}txp_users ON ${tp}textpattern.AuthorID=${tp}txp_users.name"
+		. " LEFT JOIN ${tp}txp_image ON ${tp}textpattern.Image=${tp}txp_image.id"
+		. " LEFT JOIN ${tp}txp_file ON ${tp}textpattern.custom_1=${tp}txp_file.id"
 		. " ORDER BY Posted DESC",
 	);
 	$sth->execute();
@@ -494,8 +512,10 @@ sub serialize {
 			&& ! _in_the_past($normalized_post->{expiration_date}));
 
 	$serialized{post} = _get_url_preserving_filename(
+		$config->{use_and_forget}->{permalink_formatter},
 		$config->{keep}->{timezone},
-		$config->{use_and_forget}->{permalink_format},
+		$normalized_post->{section},
+		$normalized_post->{id},
 		$normalized_post->{creation_date},
 		$normalized_post->{url_slug},
 		$normalized_post->{text_format},
@@ -531,6 +551,8 @@ sub serialize {
 		);
 		my $pid = eval {
 			open2(*OUT, *IN, @command);
+			binmode(IN, ':utf8');
+			binmode(OUT, ':utf8');
 		};
 		if ($@) {
 			die "can't pipe to ikiwiki-comment: $!";
@@ -572,7 +594,7 @@ sub _get_time {
 }
 
 sub _get_url_preserving_filename {
-	my ($timezone, $permalink_format, $date, $slug, $format) = @_;
+	my ($permalink_formatter, $timezone, $section, $id, $date, $slug, $format) = @_;
 
 	eval q{
 		use POSIX qw(strftime);
@@ -580,12 +602,9 @@ sub _get_url_preserving_filename {
 	if ($@) {
 		die "can't compute correct datetimes: $@";
 	}
-	my $date_prefix = strftime(
-		$permalink_format,
-		localtime(_get_time($timezone, $date)),
-	);
 
-	return qq{$date_prefix/$slug.$format};
+	my $prefix = $permalink_formatter->($section, $id, $date, $timezone);
+	return qq{$prefix/$slug.$format};
 }
 
 sub get_post {
