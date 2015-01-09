@@ -222,14 +222,13 @@ sub _normalize_post {
 		tags		=> sub {
 			my @tags;
 			for (qw(Category1 Category2)) {
-				push @tags, lc($raw_post->{$_})
-					if defined $raw_post->{$_}
-						&& $raw_post->{$_};
+				if (defined $raw_post->{$_}) {
+					my $t = _normalize_tag($raw_post->{$_});
+					push @tags, $t if $t;
+				}
 			}
 			for (split(',', $raw_post->{Keywords})) {
-				$_ =~ s/^\s+//;
-				$_ =~ s/\s+$//;
-				push @tags, lc($_);
+				push @tags, _normalize_tag($_);
 			}
 			return \@tags;
 		},
@@ -285,6 +284,18 @@ sub _normalize_post {
 	}
 
 	return $normalized_post;
+}
+
+sub _normalize_tag {
+	my ($raw_tag) = @_;
+	my $tag = $raw_tag;
+
+	$tag =~ s/^\s+//;
+	$tag =~ s/\s+$//;
+	$tag =~ s/ /_/g;
+	$tag = lc($tag);
+
+	return $tag;
 }
 
 sub _expand_txp_tags {
@@ -503,8 +514,7 @@ sub ikiformat {
 	$normalized_post->{body} =
 		_escape_ikiwiki_directives($normalized_post->{body});
 
-	my @tags = map { normalize_spaces($_) } @{$normalized_post->{tags}};
-	my $tags = join(' ', @tags);
+	my $tags = join(' ', @{$normalized_post->{tags}});
 	my $tagline = $tags ? "[[!tag $tags]]\n" : "";
 	my $enclosure = $normalized_post->{enclosure};
 	my $enclosureline = defined $enclosure ? "[[!meta enclosure=\"$enclosure\"]]\n" : "";
