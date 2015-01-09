@@ -9,8 +9,6 @@ use IkiWiki;
 
 package IkiWiki::Import;
 
-our $verbose = 0;
-
 sub main {
 	my ($srcdir, $setupfile, $sourcename, %params) = @_;
 	die "usage: $0 <srcdir> <setupfile> <sourcename> [sourceparams]\n"
@@ -19,7 +17,7 @@ sub main {
 	die "srcdir mustn't exist" if -e $srcdir;
 	die "setupfile mustn't exist" if -e $setupfile;
 
-	$verbose = 1 if delete $params{verbose};
+	my $verbose = delete $params{verbose} ? 1 : 0;
 
 	my $source = IkiWiki::Import::Source->new($sourcename, %params);
 	my $config = IkiWiki::Import::Config->new($source);
@@ -28,6 +26,7 @@ sub main {
 			IkiWiki::Import::FormattedPost->new($post),
 			$srcdir,
 			$config,
+			$verbose,
 		);
 	}
 
@@ -541,22 +540,18 @@ package IkiWiki::Import::SerializedPost;
 use Params::Validate qw(:all);
 
 sub new {
-	my ($class, $formatted_post, $srcdir, $config) = validate_pos(@_, 1,
+	my ($class, $formatted_post, $srcdir, $config, $verbose) = validate_pos(@_, 1,
 		{ isa => 'IkiWiki::Import::FormattedPost' },
 		{ type => SCALAR },
 		{ isa => 'IkiWiki::Import::Config' },
+		{ type => SCALAR },
 	);
-	my $self = { serialize($formatted_post, $srcdir, $config) };
+	my $self = { serialize($formatted_post, $srcdir, $config, $verbose) };
 	bless($self, $class);
 }
 
-sub print_if_verbose {
-	my ($message) = @_;
-	print STDERR $message if $IkiWiki::Import::verbose;
-}
-
 sub serialize {
-	my ($formatted_post, $srcdir, $config) = @_;
+	my ($formatted_post, $srcdir, $config, $verbose) = @_;
 	my %serialized;
 
 	my $normalized_post = $formatted_post->{normalized_post};
@@ -576,9 +571,9 @@ sub serialize {
 		$normalized_post->{text_format},
 	);
 
-	print_if_verbose("writing post " . $normalized_post->{id});
+	print STDERR "writing post " . $serialized{post} if $verbose;
 	IkiWiki::writefile($serialized{post}, $srcdir, $formatted_post->get_post());
-	print_if_verbose('.');
+	print STDERR '.' if $verbose;
 	utime(
 		time(),
 		_get_time(
@@ -619,10 +614,10 @@ sub serialize {
 		close IN;
 		my @unlikely = <OUT>;
 		waitpid $pid, 0;
-		print_if_verbose('.');
+		print STDERR '.' if $verbose;
 	}
 
-	print_if_verbose("\n");
+	print STDERR "\n" if $verbose;
 	return %serialized;
 }
 
