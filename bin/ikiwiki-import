@@ -9,6 +9,8 @@ use IkiWiki;
 
 package IkiWiki::Import;
 
+our $verbose = 0;
+
 sub main {
 	my ($srcdir, $setupfile, $sourcename, %params) = @_;
 	die "usage: $0 <srcdir> <setupfile> <sourcename> [sourceparams]\n"
@@ -16,6 +18,8 @@ sub main {
 			&& defined $setupfile && defined $sourcename;
 	die "srcdir mustn't exist" if -e $srcdir;
 	die "setupfile mustn't exist" if -e $setupfile;
+
+	$verbose = 1 if delete $params{verbose};
 
 	my $source = IkiWiki::Import::Source->new($sourcename, %params);
 	my $config = IkiWiki::Import::Config->new($source);
@@ -224,6 +228,8 @@ sub _normalize_post {
 						&& $raw_post->{$_};
 			}
 			for (split(',', $raw_post->{Keywords})) {
+				$_ =~ s/^\s+//;
+				$_ =~ s/\s+$//;
 				push @tags, lc($_);
 			}
 			return \@tags;
@@ -485,6 +491,12 @@ sub split_on_excerpt {
 	}
 }
 
+sub normalize_spaces {
+	my ($tag) = @_;
+	$tag =~ s/ /_/g;
+	return $tag;
+}
+
 sub ikiformat {
 	my ($normalized_post) = @_;
 	my %ikiformatted;
@@ -492,7 +504,8 @@ sub ikiformat {
 	$normalized_post->{body} =
 		_escape_ikiwiki_directives($normalized_post->{body});
 
-	my $tags = join(' ', @{$normalized_post->{tags}});
+	my @tags = map { normalize_spaces($_) } @{$normalized_post->{tags}};
+	my $tags = join(' ', @tags);
 	my $tagline = $tags ? "[[!tag $tags]]\n" : "";
 	my $enclosure = $normalized_post->{enclosure};
 	my $enclosureline = defined $enclosure ? "[[!meta enclosure=\"$enclosure\"]]\n" : "";
@@ -537,6 +550,11 @@ sub new {
 	bless($self, $class);
 }
 
+sub print_if_verbose {
+	my ($message) = @_;
+	print STDERR $message if $IkiWiki::Import::verbose;
+}
+
 sub serialize {
 	my ($formatted_post, $srcdir, $config) = @_;
 	my %serialized;
@@ -557,7 +575,10 @@ sub serialize {
 		$normalized_post->{url_slug},
 		$normalized_post->{text_format},
 	);
+
+	print_if_verbose("writing post " . $normalized_post->{id});
 	IkiWiki::writefile($serialized{post}, $srcdir, $formatted_post->get_post());
+	print_if_verbose('.');
 	utime(
 		time(),
 		_get_time(
@@ -598,8 +619,10 @@ sub serialize {
 		close IN;
 		my @unlikely = <OUT>;
 		waitpid $pid, 0;
+		print_if_verbose('.');
 	}
 
+	print_if_verbose("\n");
 	return %serialized;
 }
 
