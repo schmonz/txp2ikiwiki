@@ -103,6 +103,7 @@ sub serialize_one {
 		$formatted_post,
 		$srcdir,
 		$config,
+		0,
 	);
 	isa_ok($serialized_post, 'IkiWiki::Import::SerializedPost');
 
