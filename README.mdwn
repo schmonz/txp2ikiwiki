@@ -45,3 +45,7 @@ comments.
     - Shows what has been done (perhaps as passing tests)
     - Shows what hasn't been done (perhaps as failing tests)
     - Explains what is left to be done manually
+
+### Importing from other systems
+
+- <http://ikiwiki.info/convert/>
